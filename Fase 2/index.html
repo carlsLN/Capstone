@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Office - Portal de Trámites Corporativos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            green: '#00C875',
+                            greenHover: '#00B368',
+                            greenLight: '#E6F9F1',
+                            greenBorder: '#A3E2C7',
+                            dark: '#0F172A',
+                            slate: '#1E293B',
+                            grayBg: '#F8FAFC',
+                            cardBorder: '#E2E8F0',
+                            accentBlue: '#0066FF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-bg {
+            background: linear-gradient(rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.94)), 
+                        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00C875;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="font-sans bg-brand-grayBg text-slate-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-brand-green/30 pointer-events-none">
+        <i data-lucide="check-circle" class="w-5 h-5 text-brand-green"></i>
+        <span id="toast-message" class="text-sm font-medium">Acción ejecutada con éxito</span>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Brand Logo & Subtitle -->
+                <div class="flex items-center space-x-3">
+                    <a href="#" class="flex items-center space-x-2 group">
+                        <div class="w-9 h-9 rounded-full bg-brand-greenLight flex items-center justify-center text-brand-green group-hover:scale-105 transition-transform">
+                            <svg class="w-6 h-6 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 12c-2-2.5-4-4-6.5-4A3.5 3.5 0 0 0 2 11.5 3.5 3.5 0 0 0 5.5 15c2.5 0 4.5-1.5 6.5-4zm0 0c2 2.5 4 4 6.5 4a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 18.5 8c-2.5 0-4.5 1.5-6.5 4z"/>
+                            </svg>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold tracking-tight text-slate-900 leading-none">easy office</span>
+                            <span class="text-[10px] font-semibold text-slate-400 tracking-wider uppercase mt-1">PORTAL DE TRÁMITES CORPORATIVOS</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+                    <a href="#lineas-negocio" class="hover:text-brand-green transition-colors">Líneas de Negocio</a>
+                    <a href="#tramites-frecuentes" class="hover:text-brand-green transition-colors">Trámites Frecuentes</a>
+                    <a href="#preguntas-frecuentes" class="hover:text-brand-green transition-colors">Preguntas Frecuentes</a>
+                    <a href="#soporte" class="hover:text-brand-green transition-colors">Soporte</a>
+                </nav>
+
+                <!-- Right Controls (Lang & Auth Container) -->
+                <div class="hidden md:flex items-center space-x-5">
+                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md uppercase tracking-wider">ES</span>
+                    
+                    <!-- Contenedor dinámico de sesión (Firebase Auth) -->
+                    <div id="authContainer">
+                        <button onclick="openModal('loginModal')" class="bg-brand-accentBlue hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-full shadow-md shadow-blue-500/10 hover:shadow-lg transition-all flex items-center space-x-2">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            <span>Iniciar sesión</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-slate-600 hover:text-slate-900 p-2 focus:outline-none">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-3">
+            <a href="#lineas-negocio" class="block py-2 text-slate-700 font-medium hover:text-brand-green">Líneas de Negocio</a>
+            <a href="#tramites-frecuentes" class="block py-2 text-slate-700 font-medium hover:text-brand-green">Trámites Frecuentes</a>
+            <a href="#preguntas-frecuentes" class="block py-2 text-slate-700 font-medium hover:text-brand-green">Preguntas Frecuentes</a>
+            <a href="#soporte" class="block py-2 text-slate-700 font-medium hover:text-brand-green">Soporte</a>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">ES</span>
+                <button onclick="openModal('loginModal')" class="w-full ml-4 bg-brand-accentBlue text-white text-center py-2.5 rounded-full font-semibold text-sm">
+                    Iniciar sesión
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero-bg text-white py-20 lg:py-28 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div class="max-w-4xl mx-auto text-center space-y-6">
+            <div class="inline-flex items-center">
+                <span class="bg-emerald-500/20 text-brand-green border border-emerald-500/30 text-xs font-bold px-4 py-1.5 rounded-full tracking-wider uppercase">
+                    EMPRENDEDORES & PYMES
+                </span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
+                Digitaliza y gestiona todos los trámites de tu negocio
+            </h1>
+            <p class="text-slate-300 text-base sm:text-lg md:text-xl font-normal max-w-2xl mx-auto leading-relaxed">
+                Accede al catálogo unificado para la constitución, representación tributaria y administración contable de tu empresa en un solo lugar.
+            </p>
+
+            <!-- Search Bar Capsule -->
+            <div class="pt-4 max-w-2xl mx-auto">
+                <div class="bg-slate-900/90 backdrop-blur-md p-2 rounded-full border border-slate-700/80 shadow-2xl flex items-center space-x-2">
+                    <div class="pl-4 text-slate-400">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="¿Qué trámite o servicio necesitas hoy?" class="w-full bg-transparent text-white placeholder-slate-400 focus:outline-none text-sm sm:text-base px-2">
+                    <button onclick="executeSearch()" class="bg-brand-green hover:bg-brand-greenHover text-slate-950 font-bold px-6 py-3 rounded-full text-sm transition-all flex-shrink-0 shadow-lg shadow-brand-green/20">
+                        Buscar
+                    </button>
+                </div>
+
+                <!-- Quick Tags -->
+                <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400">
+                    <span class="font-medium text-slate-400">Búsquedas frecuentes:</span>
+                    <button onclick="setQuickSearch('Firma')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-full border border-slate-700 transition-colors">Firma RUT</button>
+                    <button onclick="setQuickSearch('Constitución')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-full border border-slate-700 transition-colors">Constitución SpA</button>
+                    <button onclick="setQuickSearch('Balance')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-full border border-slate-700 transition-colors">Balance Mensual</button>
+                    <button onclick="setQuickSearch('Patente')" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-full border border-slate-700 transition-colors">Patente Comercial</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 1: LÍNEAS DE NEGOCIO -->
+    <section id="lineas-negocio" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+            <div class="space-y-2">
+                <span class="inline-block bg-emerald-100 text-brand-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    LÍNEAS DE NEGOCIO
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Servicios estructurados para cada etapa de tu empresa
+                </h2>
+            </div>
+            <p class="text-slate-500 text-sm max-w-md mt-3 md:mt-0 leading-relaxed">
+                Selecciona una categoría de trámites para revisar requerimientos, plazos de solicitud y tarifas estandarizadas transparentes.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Card 1 -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden">
+                <div class="w-full h-1 bg-brand-green absolute top-0 left-0"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-brand-green flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Domicilio Tributario</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">Establece la dirección comercial y tributaria autorizada para recibir notificaciones del SII.</p>
+                    <ul class="space-y-2.5 text-xs text-slate-600 mb-6">
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Dirección Comercial</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Recepción de Correspondencia</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Patente Municipal</span></li>
+                    </ul>
+                </div>
+                <a href="#tramites-frecuentes" class="inline-flex items-center text-xs font-bold text-brand-green hover:text-brand-greenHover space-x-1 group/link">
+                    <span>Explorar Trámites</span><i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden">
+                <div class="w-full h-1 bg-brand-green absolute top-0 left-0"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-brand-green flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="briefcase" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Constitución de Empresa</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">Creamos tu empresa desde cero, redactamos estatutos y legalizamos ante notaría.</p>
+                    <ul class="space-y-2.5 text-xs text-slate-600 mb-6">
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Constitución De SpA</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Inscripción Registro Comercio</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Asignación de Rut</span></li>
+                    </ul>
+                </div>
+                <a href="#tramites-frecuentes" class="inline-flex items-center text-xs font-bold text-brand-green hover:text-brand-greenHover space-x-1 group/link">
+                    <span>Explorar Trámites</span><i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden">
+                <div class="w-full h-1 bg-brand-green absolute top-0 left-0"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-brand-green flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="folder-lock" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Gestión Documental</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">Digitalización de flujo de firmas, notarías virtuales y custodia de escrituras.</p>
+                    <ul class="space-y-2.5 text-xs text-slate-600 mb-6">
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Firma Electrónica Avanzada</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Legalización Digital</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Poderes y Mandatos</span></li>
+                    </ul>
+                </div>
+                <a href="#tramites-frecuentes" class="inline-flex items-center text-xs font-bold text-brand-green hover:text-brand-greenHover space-x-1 group/link">
+                    <span>Explorar Trámites</span><i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden">
+                <div class="w-full h-1 bg-brand-green absolute top-0 left-0"></div>
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-brand-green flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Asesoría Contable</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">Gestión mensual de tus obligaciones tributarias, IVA, balances y declaraciones.</p>
+                    <ul class="space-y-2.5 text-xs text-slate-600 mb-6">
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Declaración IVA F29</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Balances Financieros Anuales</span></li>
+                        <li class="flex items-center space-x-2"><i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-green flex-shrink-0"></i><span>Liquidación de Sueldos</span></li>
+                    </ul>
+                </div>
+                <a href="#tramites-frecuentes" class="inline-flex items-center text-xs font-bold text-brand-green hover:text-brand-greenHover space-x-1 group/link">
+                    <span>Explorar Trámites</span><i data-lucide="arrow-right" class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: TRÁMITES FRECUENTES (DINÁMICO DESDE FIRESTORE) -->
+    <section id="tramites-frecuentes" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="text-center space-y-3 mb-12">
+            <span class="inline-block bg-emerald-100 text-brand-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                TRÁMITES FRECUENTES
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Los trámites más solicitados esta semana
+            </h2>
+            <p class="text-slate-500 text-sm max-w-2xl mx-auto">
+                Inicia directamente las gestiones más comunes con plazos de entrega garantizados y requisitos simplificados online.
+            </p>
+        </div>
+
+        <div id="tramitesGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="col-span-3 text-center py-12 text-slate-400 text-sm font-medium">
+                Cargando trámites desde la base de datos...
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: METRICS / STATISTICS BANNER -->
+    <section class="bg-slate-950 text-white py-12 border-y border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center divide-x-0 sm:divide-x divide-slate-800/80">
+                <div class="p-2">
+                    <p class="text-3xl sm:text-4xl font-extrabold text-brand-green tracking-tight">5k+</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Empresas constituidas con éxito</p>
+                </div>
+                <div class="p-2">
+                    <p class="text-3xl sm:text-4xl font-extrabold text-brand-green tracking-tight">99.2%</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Tasa de aprobación en trámites SII</p>
+                </div>
+                <div class="p-2">
+                    <p class="text-3xl sm:text-4xl font-extrabold text-brand-green tracking-tight">24h</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Tiempo promedio de respuesta inicial</p>
+                </div>
+                <div class="p-2">
+                    <p class="text-3xl sm:text-4xl font-extrabold text-brand-green tracking-tight">100%</p>
+                    <p class="text-xs text-slate-400 font-medium mt-1">Seguridad y validez legal garantizada</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: PREGUNTAS FRECUENTES -->
+    <section id="preguntas-frecuentes" class="pt-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
+        <div class="text-center space-y-3 mb-10">
+            <span class="inline-block bg-emerald-100 text-brand-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                PREGUNTAS FRECUENTES
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Resolvemos tus dudas antes de empezar
+            </h2>
+            <p class="text-slate-500 text-sm max-w-2xl mx-auto">
+                Lo que más nos preguntan los emprendedores y pymes antes de iniciar un trámite.
+            </p>
+        </div>
+
+        <div class="space-y-3">
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Necesito ir a una oficina para hacer mi trámite?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">No. Puedes revisar el catálogo, conocer los requisitos e iniciar tu trámite desde el portal, y un ejecutivo te acompaña por WhatsApp durante todo el proceso.</p>
+            </details>
+
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Qué documentos necesito?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">Depende del trámite. Cada ficha del catálogo indica sus requisitos, por ejemplo la Clave SII, los estatutos vigentes o la cédula de identidad de los socios.</p>
+            </details>
+
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Cuánto demora mi trámite?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">Cada trámite muestra su plazo estimado en la ficha del catálogo. El plazo comienza a correr una vez que entregas los documentos requeridos.</p>
+            </details>
+
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Cómo pago mi trámite?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">Por transferencia bancaria. Puedes pagar el total al iniciar o abonar el 50 % al comienzo y el 50 % restante al término del trámite.</p>
+            </details>
+
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Cómo sé en qué estado está mi trámite?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">Tu ejecutivo te informa cada avance. Además, estamos incorporando una vista en el portal para que revises el estado de tu solicitud cuando quieras.</p>
+            </details>
+
+            <details class="group bg-white rounded-2xl border border-slate-200/80 shadow-sm open:shadow-md transition-all">
+                <summary class="flex items-center justify-between cursor-pointer list-none p-5 text-sm sm:text-base font-semibold text-slate-900">
+                    ¿Mis datos están protegidos?
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-brand-green flex-shrink-0 ml-4 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">Sí. La información viaja por una conexión cifrada y solo pueden verla tú y el ejecutivo a cargo, conforme a la Ley N.º 21.719 de protección de datos personales.</p>
+            </details>
+        </div>
+    </section>
+
+    <!-- SECTION 5: CUSTOM REQUEST CALLOUT -->
+    <section class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="bg-emerald-50/50 rounded-3xl p-8 sm:p-12 border border-emerald-100 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="space-y-3 max-w-2xl">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    ¿No encuentras el trámite específico que necesitas?
+                </h2>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Nuestros asesores corporativos pueden estructurar flujos personalizados o mandatos especiales ante instituciones gubernamentales. Contáctanos para una cotización inmediata sin costo.
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <button onclick="showToast('Descargando tarifario completo en PDF...')" class="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-6 py-3.5 rounded-xl border border-slate-200 shadow-sm transition-colors text-center whitespace-nowrap">
+                    Ver Tarifario Completo
+                </button>
+                <button onclick="openModal('contactModal')" class="w-full sm:w-auto bg-brand-green hover:bg-brand-greenHover text-slate-950 font-bold text-xs px-6 py-3.5 rounded-xl shadow-md shadow-brand-green/10 transition-colors text-center whitespace-nowrap">
+                    Hablar con un Ejecutivo
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="soporte" class="bg-slate-950 text-slate-400 pt-16 pb-12 mt-auto border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-slate-800/80">
+                <div class="md:col-span-2 space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-7 h-7 rounded-full bg-brand-greenLight flex items-center justify-center text-brand-green">
+                            <svg class="w-5 h-5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 12c-2-2.5-4-4-6.5-4A3.5 3.5 0 0 0 2 11.5 3.5 3.5 0 0 0 5.5 15c2.5 0 4.5-1.5 6.5-4zm0 0c2 2.5 4 4 6.5 4a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 18.5 8c-2.5 0-4.5 1.5-6.5 4z"/>
+                            </svg>
+                        </div>
+                        <span class="text-lg font-bold text-white tracking-tight">Easy Office</span>
+                    </div>
+                    <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+                        Plataforma digital unificada para la formalización, cumplimiento tributario y soporte documental de empresas en el mercado hispanohablante.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">SERVICIOS</h4>
+                    <ul class="space-y-2.5 text-xs">
+                        <li><a href="#lineas-negocio" class="hover:text-white transition-colors">Domicilio Tributario</a></li>
+                        <li><a href="#lineas-negocio" class="hover:text-white transition-colors">Constitución SpA</a></li>
+                        <li><a href="#lineas-negocio" class="hover:text-white transition-colors">Firma Electrónica</a></li>
+                        <li><a href="#lineas-negocio" class="hover:text-white transition-colors">Balances e IVA</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">RECURSOS</h4>
+                    <ul class="space-y-2.5 text-xs">
+                        <li><a href="#" class="hover:text-white transition-colors">Guías de Trámites</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Notarías en Convenio</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Tarifas Públicas</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Portal del SII</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">SOPORTE</h4>
+                    <ul class="space-y-2.5 text-xs">
+                        <li><a href="#preguntas-frecuentes" class="hover:text-white transition-colors">Preguntas Frecuentes</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Estado de Trámite</a></li>
+                        <li><a href="#" onclick="openModal('contactModal')" class="hover:text-white transition-colors">Contacto Ejecutivo</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
+                <p>© 2026 Easy Office. Todos los derechos reservados.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="hover:text-slate-400 transition-colors">Términos de servicio</a>
+                    <a href="#" class="hover:text-slate-400 transition-colors">Políticas de Privacidad</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LOGIN MODAL (CON FIREBASE AUTH) -->
+    <div id="loginModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+            <button onclick="closeModal('loginModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-brand-green mx-auto mb-3">
+                    <i data-lucide="user-check" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">Iniciar Sesión</h3>
+                <p class="text-xs text-slate-500 mt-1">Ingresa a tu portal corporativo</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" required placeholder="tu@empresa.com" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green">
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center text-slate-600">
+                        <input type="checkbox" class="rounded text-brand-green focus:ring-0 mr-2"> Recordarme
+                    </label>
+                    <button type="button" onclick="handleForgotPassword()" class="text-brand-green hover:underline bg-transparent border-0 cursor-pointer font-medium">¿Olvidaste tu clave?</button>
+                </div>
+                <button type="submit" class="w-full bg-brand-accentBlue hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition-colors">
+                    Ingresar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTACT EXECUTIVE MODAL -->
+    <div id="contactModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+            <button onclick="closeModal('contactModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="mb-6">
+                <span class="text-xs font-bold text-brand-green uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-md">ASESORÍA PERSONALIZADA</span>
+                <h3 class="text-xl font-bold text-slate-900 mt-2">Hablar con un Ejecutivo</h3>
+                <p class="text-xs text-slate-500 mt-1">Completa los datos y te contactaremos en menos de 15 minutos.</p>
+            </div>
+            <form onsubmit="handleContact(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo</label>
+                        <input type="text" required placeholder="Juan Pérez" class="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
+                        <input type="tel" required placeholder="+56 9 1234 5678" class="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">RUT Empresa / Nombre Fantasía</label>
+                    <input type="text" placeholder="76.123.456-7 o Mi Empresa SpA" class="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción de la Solicitud</label>
+                    <textarea rows="3" placeholder="¿Qué gestión específica necesitas estructurar?" class="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-brand-green"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-brand-green hover:bg-brand-greenHover text-slate-950 font-bold py-3 rounded-lg text-sm transition-colors">
+                    Enviar Solicitud de Cotización
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GENERAL JAVASCRIPT & UI CONTROLS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+        });
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Search Filter Execution
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const cards = document.querySelectorAll('.tramite-card');
+            
+            if(!query) {
+                cards.forEach(card => card.style.display = 'flex');
+                showToast('Mostrando todos los trámites disponibles');
+                return;
+            }
+
+            let matches = 0;
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if(text.includes(query)) {
+                    card.style.display = 'flex';
+                    matches++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            showToast(`Filtro aplicado: ${matches} trámite(s) encontrado(s)`);
+        }
+
+        // Quick Tag setter
+        function setQuickSearch(term) {
+            document.getElementById('searchInput').value = term;
+            executeSearch();
+            document.getElementById('tramites-frecuentes').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Trigger process
+        function startProcess(tramiteName) {
+            showToast(`Iniciando solicitud para: ${tramiteName}`);
+            setTimeout(() => {
+                openModal('contactModal');
+            }, 600);
+        }
+
+        // Modal Controls
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function handleContact(e) {
+            e.preventDefault();
+            closeModal('contactModal');
+            showToast('Solicitud enviada. Un ejecutivo te contactará en breve.');
+        }
+
+        // Toast Notification System
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+
+    <!-- FIREBASE (FIRESTORE + AUTHENTICATION) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCV4b86nFt7ucmGZnUMlSvlXlL7aElyiuE",
+            authDomain: "easy-office-97ace.firebaseapp.com",
+            projectId: "easy-office-97ace",
+            storageBucket: "easy-office-97ace.firebasestorage.app",
+            messagingSenderId: "373033526156",
+            appId: "1:373033526156:web:b9e7155cc689666238aca9",
+            measurementId: "G-TFWZBMJ45K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // 1. CARGAR TRÁMITES DESDE FIRESTORE
+        async function cargarTramitesDesdeFirestore() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "tramites"));
+                const grid = document.getElementById('tramitesGrid');
+                
+                if (querySnapshot.empty) {
+                    grid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-400 text-sm">No se encontraron trámites registrados en la base de datos.</div>';
+                    return;
+                }
+
+                grid.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const t = doc.data();
+                    const costoFormatted = t.costo ? `$${Number(t.costo).toLocaleString('es-CL')} CLP` : 'A convenir';
+
+                    const cardHTML = `
+                        <div class="tramite-card bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="bg-emerald-50 text-brand-green text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                                        ${t.categoria || 'GENERAL'}
+                                    </span>
+                                    <span class="text-xs text-slate-400 font-medium">Plazo: ${t.plazo || 'N/A'}</span>
+                                </div>
+                                <h3 class="text-base font-bold text-slate-900 mb-4 leading-snug">${t.titulo || 'Sin título'}</h3>
+                                
+                                <div class="space-y-2 text-xs text-slate-500 mb-6">
+                                    <p><span class="font-semibold text-slate-700">Requisitos:</span> ${t.requisitos || 'No especificados'}</p>
+                                    <p><span class="font-semibold text-slate-700">Tipo:</span> ${t.tipo || '100% Online y Remoto'}</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 uppercase font-semibold block">COSTO ESTIMADO</span>
+                                    <span class="text-sm font-extrabold text-slate-900">${costoFormatted}</span>
+                                </div>
+                                <button onclick="startProcess('${t.titulo || 'Trámite'}')" class="bg-brand-green hover:bg-brand-greenHover text-slate-950 font-bold px-5 py-2 rounded-lg text-xs transition-colors shadow-sm">
+                                    Iniciar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += cardHTML;
+                });
+
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error("Error al cargar trámites desde Firebase:", error);
+                document.getElementById('tramitesGrid').innerHTML = '<div class="col-span-3 text-center py-12 text-red-500 text-sm">Ocurrió un error al conectar con Firestore.</div>';
+            }
+        }
+
+        // 2. GESTIÓN DE AUTENTICACIÓN (LOGIN REAL)
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    closeModal('loginModal');
+                    showToast('¡Sesión iniciada correctamente!');
+                    loginForm.reset();
+                } catch (error) {
+                    console.error("Error de login:", error.code);
+                    if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        showToast('Error: Correo o contraseña incorrectos.');
+                    } else if (error.code === 'auth/api-key-not-valid') {
+                        showToast('Error de configuración en Firebase API Key.');
+                    } else {
+                        showToast('Error al iniciar sesión. Verifique sus datos.');
+                    }
+                }
+            });
+        }
+
+        // 3. RECUPERACIÓN DE CONTRASEÑA
+        window.handleForgotPassword = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
+            if(!email) {
+                showToast('Por favor, ingresa tu correo primero en el campo.');
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast('Correo de recuperación enviado con éxito.');
+            } catch (error) {
+                showToast('No se pudo enviar el correo. Verifique que exista.');
+            }
+        };
+
+        // 4. CAMBIO DE ESTADO EN EL NAVBAR SEGÚN SESIÓN
+        onAuthStateChanged(auth, (user) => {
+            const authContainer = document.getElementById('authContainer');
+            if (user) {
+                authContainer.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs font-semibold text-slate-700 bg-emerald-50 text-brand-green px-3 py-1.5 rounded-lg border border-brand-green/30">
+                            🟢 ${user.email}
+                        </span>
+                        <button id="logoutBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs px-4 py-2 rounded-full transition-all">
+                            Cerrar sesión
+                        </button>
+                    </div>
+                `;
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async () => {
+                        await signOut(auth);
+                        showToast('Sesión cerrada correctamente.');
+                    });
+                }
+            } else {
+                authContainer.innerHTML = `
+                    <button onclick="openModal('loginModal')" class="bg-brand-accentBlue hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-full shadow-md shadow-blue-500/10 hover:shadow-lg transition-all flex items-center space-x-2">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>Iniciar sesión</span>
+                    </button>
+                `;
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            }
+        });
+
+        // Inicializar carga de datos al abrir la página
+        window.addEventListener('DOMContentLoaded', () => {
+            cargarTramitesDesdeFirestore();
+        });
+    </script>
+</body>
+</html>
