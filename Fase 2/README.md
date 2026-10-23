@@ -13,7 +13,7 @@ Este directorio contiene la documentación individual y grupal correspondiente a
 ### Entregables Individuales
 - **Juan Castillo:** `Castillo_Juan_2.1_APT122_DiarioReflexionFase2.docx`
 - **Carlos Lienan:** `Lienan_Carlos_2.1_APT122_DiarioReflexionFase2.docx`
-- **Nicolas Barraza:** `Nicolas_Barraza_2.1_APT122_DiarioReflexionFase2.docx`
+- **Nicolas Barraza:** `Barraza_Nicolas_2.1_APT122_DiarioReflexionFase2.docx`
 
 ### Evidencias Proyecto:
 
