@@ -15,10 +15,23 @@ Este directorio contiene la documentación individual y grupal correspondiente a
 - **Carlos Lienan:** `Lienan_Carlos_2.1_APT122_DiarioReflexionFase2.docx`
 - **Nicolas Barraza:** `Barraza_Nicolas_2.1_APT122_DiarioReflexionFase2.docx`
 
-### Evidencias Proyecto:
+### Evidencias Proyecto
 
-Presentación Proyecto.pptx
-Evidencias de documentación
-Evidencias de sistema:
-Aplicación
-Base de datos
+**Presentación**
+- Presentación Proyecto.pptx
+- Presentación Proyecto.pdf
+
+**Evidencias de documentación**
+- SRS_EasyOffice_Portal_CRM.docx
+- Matriz_TRL_EasyOffice.docx
+- Documento_Inicial_EasyOffice.docx
+
+**Evidencias de sistema: Aplicación**
+- index.html
+- Evidencia_Aplicacion_Inicio.png
+- Evidencia_Aplicacion_Catalogo.png
+- Evidencia_Aplicacion_Login.png
+- Evidencia_Aplicacion_SesionIniciada.png
+
+**Evidencias de sistema: Base de datos**
+- Evidencia_BaseDatos_Firestore.png
