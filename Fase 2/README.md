@@ -4,12 +4,21 @@ Este directorio contiene la documentación individual y grupal correspondiente a
 
 ## Estructura de Entregables
 
-### 📄 Documentos Generales
-- `2.4_APT122_FormativaFase2.docx`
-- `2.5_GuiaEstudiante_Fase 2_Definicion Proyecto APT (Español).docx`
-- `Presentacion_Capstone_EasyOffice_Equipo11_Fase2.pdf`
+### Documentos Generales
+- 2.4_GuiaEstudiante_Fase 2_DesarrolloProyecto APT (Español).docx
+- 2.4_GuiaEstudiante_Fase 2_DesarrolloProyecto APT (Inglés).docx — Optativo
+- 2.6_GuiaEstudiante_Fase 2_Informe Final Proyecto APT (Español).docx
+- 2.6_GuiaEstudiante_Fase 2_Informe Final Proyecto APT (Inglés).docx — Optativo
 
-### 👤 Entregables Individuales
-- **Juan Castillo:** `Castillo_Juan_2.1...`, `Castillo_Juan_2.2...`, `Castillo_Juan_2.3...`
-- **Carlos Lienan:** `Lienan_Carlos_2.1...`, `Lienan_Carlos_2.2...`, `Lienan_Carlos_2.3...`
-- **Nicolas Barraza:** `Nicolas_Barraza_2.1...`, `Nicolas_Barraza_2.2...`, `Nicolas_Barraza_2.3...`
+### Entregables Individuales
+- **Juan Castillo:** `Castillo_Juan_2.1_APT122_DiarioReflexionFase2.docx`
+- **Carlos Lienan:** `Lienan_Carlos_2.1_APT122_DiarioReflexionFase2.docx`
+- **Nicolas Barraza:** `Nicolas_Barraza_2.1_APT122_DiarioReflexionFase2.docx`
+
+### Evidencias Proyecto:
+
+Presentación Proyecto.pptx
+Evidencias de documentación
+Evidencias de sistema:
+Aplicación
+Base de datos
