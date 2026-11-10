@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Easy Office · Mapa del prototipo</title>
+  <link rel="icon" type="image/png" href="assets/img/marca-claro.png">
+  <link rel="stylesheet" href="assets/eo.css">
+  <script src="assets/lucide.min.js"></script>
+  <script src="assets/data.js"></script>
+  <script src="assets/nube.js"></script>
+  <script src="assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg min-h-screen">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <header class="bg-eo-ink text-white">
+    <div class="container-eo py-12 sm:py-16">
+      <div id="logo"></div>
+      <h1 class="mt-8 text-3xl sm:text-4xl font-semibold tracking-tight">Portal transaccional y CRM interno</h1>
+      <p class="mt-3 text-slate-300 max-w-2xl">Prototipo navegable del MVP (TRL 6): el cliente elige su trámite, crea su cuenta verificada con código al correo y celular, paga 50% o 100% con tarjeta o por transferencia (2% de descuento), firma con FEA y sigue su estado. El equipo lo gestiona en el CRM con roles y auditoría.</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="portal/index.html" class="btn-primary">Abrir portal del cliente <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+        <a href="crm/login.html" class="btn border border-white/25 text-white hover:bg-white/5">Abrir CRM interno</a>
+        <button id="reset" class="btn text-slate-400 hover:text-white"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Borrar datos locales</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container-eo py-12 space-y-12">
+    <section>
+      <div class="flex items-center gap-3 mb-5"><span class="pill-green">Portal del cliente</span><span class="text-sm text-eo-muted">Público · responsive</span></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="portal"></div>
+    </section>
+    <section>
+      <div class="flex items-center gap-3 mb-5"><span class="pill-ink">CRM interno</span><span class="text-sm text-eo-muted">Equipo Easy Office · RBAC</span></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="crm"></div>
+    </section>
+    <section class="card p-6 sm:p-8">
+      <h2 class="font-semibold text-lg mb-4">Recorrido sugerido para la demo</h2>
+      <ol class="grid md:grid-cols-2 gap-x-10 gap-y-3 text-sm text-slate-600 list-decimal pl-5">
+        <li>Desde el <b>Catálogo</b>, abre «Iniciación de Actividades y Firma de RUT».</li>
+        <li>Elige <b>50% Abono</b> e inicia el trámite; ingresa con la cuenta de prueba (el código de verificación aparece en pantalla).</li>
+        <li>Completa los datos y mira cómo se arma el <b>borrador en vivo</b>.</li>
+        <li>Adjunta un PDF, paga con tarjeta (Webpay simulado) o por transferencia con 2% de descuento, y copia el <b>folio</b>.</li>
+        <li>En el <b>CRM</b>, el ticket aparece en «Ingresado». Asígnalo y muévelo en el Kanban.</li>
+        <li>Desde la ficha, <b>envía a firma</b>; vuelve al portal y firma con FEA.</li>
+        <li>Revisa <b>Pagos</b> (conciliación) y <b>Auditoría</b> (cada acción quedó registrada).</li>
+        <li>Cambia «Ver como» a <b>Freelance</b> para ver datos enmascarados y accesos bloqueados.</li>
+      </ol>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('logo').innerHTML = EO.logo({ size: 'lg', dark: true });
+    const P = [
+      ['portal/index.html', 'Inicio', 'home', 'Propuesta de valor, seguimiento por folio, servicios y contacto.'],
+      ['portal/catalogo.html', 'Catálogo de trámites', 'layout-grid', 'Buscador con autocompletado y filtros por línea de negocio (RF-01.1).'],
+      ['portal/tramite.html?id=inicio-actividades', 'Detalle del trámite', 'file-text', 'Requisitos, precio, plazos y selector 50% / 100% (RF-01.2).'],
+      ['portal/ingresar.html', 'Ingreso y registro', 'key-round', 'Registro en 3 pasos con cédula, código por correo o SMS, captcha y bloqueo tras 5 intentos (RF-03.1).'],
+      ['portal/contratar.html?id=contrato-vehiculo&modo=50', 'Contratación en 5 pasos', 'list-checks', 'Formulario dinámico con validación de RUT y borrador en vivo, documentos y pago.'],
+      ['portal/mis-tramites.html', 'Mis trámites', 'folder-open', 'Listado privado, acciones pendientes y nuevo trámite (RF-06.1).'],
+      ['portal/estado.html?folio=EO-2026-000482', 'Estado del trámite', 'activity', 'Línea de tiempo, firma FEA, pago del saldo y descargas (RF-06.2).'],
+    ];
+    const C = [
+      ['crm/login.html', 'Ingreso del equipo', 'lock', 'Correo corporativo con segundo factor.'],
+      ['crm/tablero.html', 'Tablero Kanban', 'columns-3', 'Tickets automáticos por estado, filtros y arrastrar para cambiar estado (RF-05).'],
+      ['crm/ticket.html?folio=EO-2026-000482', 'Ficha del trámite', 'clipboard-list', 'Asignación, documentos, subsanación, borrador, pagos e historial.'],
+      ['crm/clientes.html', 'Clientes', 'users', 'Base de clientes con exportación controlada por permisos.'],
+      ['crm/pagos.html', 'Pagos y conciliación', 'wallet', 'Conciliación automática y manual, abonos y saldos (RF-04).'],
+      ['crm/usuarios.html', 'Usuarios y roles', 'shield-check', 'Equipo y matriz de permisos editable (RNF-01.2).'],
+      ['crm/auditoria.html', 'Auditoría', 'scroll-text', 'Log inmutable encadenado con filtros (RNF-01.3).'],
+    ];
+    const card = ([h, n, ic, d]) => `<a href="${h}" class="card p-5 flex gap-4 hover:shadow-lift hover:-translate-y-0.5 transition"><span class="w-11 h-11 rounded-xl bg-eo-mint text-eo-green grid place-items-center shrink-0">${EO.icon(ic, 'w-5 h-5')}</span><span><span class="block font-semibold">${n}</span><span class="block text-sm text-eo-muted mt-1">${d}</span></span></a>`;
+    document.getElementById('portal').innerHTML = P.map(card).join('');
+    document.getElementById('crm').innerHTML = C.map(card).join('');
+    document.getElementById('reset').onclick = () => { try { Object.keys(localStorage).filter(k => k.startsWith('eo_')).forEach(k => localStorage.removeItem(k)); } catch (e) { } EO.toast('Datos guardados en este navegador borrados. Se vuelven a cargar desde Firebase.'); setTimeout(() => location.reload(), 900); };
+    EO.refreshIcons();
+  </script>
+</body>
+</html>

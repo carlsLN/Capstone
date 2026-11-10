@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis trámites · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg min-h-screen flex flex-col">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="header"></div>
+  <div class="bg-white border-b border-eo-line">
+    <div class="container-eo py-3 text-xs text-eo-muted flex items-center gap-2"><a href="index.html" class="hover:text-eo-green">Inicio</a> / <span class="text-eo-ink font-semibold">Mis trámites</span></div>
+  </div>
+
+  <main class="flex-1 container-eo max-w-6xl py-10 w-full" id="main"></main>
+  <div id="footer"></div>
+
+  <script>
+    EO.mountPortal('mis');
+    const ses = EO.session();
+    const main = document.getElementById('main');
+
+    if (!ses) {
+      main.innerHTML = `<div class="card max-w-lg mx-auto p-10 text-center">
+        <span class="w-14 h-14 rounded-2xl bg-eo-mint text-eo-green grid place-items-center mx-auto mb-4">${EO.icon('lock', 'w-6 h-6')}</span>
+        <h1 class="text-xl font-bold">Ingresa para ver tus trámites</h1>
+        <p class="text-sm text-eo-muted mt-2 mb-6">Por seguridad, solo puedes ver los trámites asociados a tu identidad.</p>
+        <a href="ingresar.html?next=mis-tramites.html" class="btn-primary w-full">${EO.icon('log-in')} Iniciar sesión</a></div>`;
+    } else {
+      let tab = EO.param('tab') === 'nuevo' ? 'nuevo' : 'lista';
+      const mine = EO.misSolicitudes(ses);
+      const total = s => s.total || EO.tramite(s.tramite).precio;
+      const pend = mine.filter(s => s.estado === 'firma' && !s.firmado || (s.pagado < total(s) && s.estado !== 'ingresado') || (s.docs || []).some(d => d.st === 'despues'));
+
+      function render() {
+        main.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div><h1 class="text-3xl font-bold tracking-tight">Mis trámites</h1>
+              <p class="text-sm text-eo-muted mt-1">Revisa el estado de tus solicitudes, firma documentos e inicia nuevos trámites.</p></div>
+            <a href="?tab=nuevo" id="nuevoBtn" class="btn-primary">${EO.icon('plus')} Nuevo trámite</a>
+          </div>
+          <p class="inline-flex items-center gap-2 rounded-full bg-white border border-eo-line px-3 py-1.5 text-[11px] text-eo-muted mb-6">${EO.icon('shield-check', 'w-3.5 h-3.5 text-eo-green')} Solo ves los trámites asociados a ${EO.esc(ses.run)}</p>
+
+          <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+            <div class="card p-4 sm:p-5"><p class="text-xs text-eo-muted">En curso</p><p class="font-display text-2xl sm:text-3xl font-extrabold mt-1">${mine.filter(s => s.estado !== 'completado').length}</p></div>
+            <div class="card p-4 sm:p-5"><p class="text-xs text-eo-muted">Requieren tu acción</p><p class="font-display text-2xl sm:text-3xl font-extrabold mt-1 text-eo-amber">${pend.length}</p></div>
+            <div class="card p-4 sm:p-5"><p class="text-xs text-eo-muted">Completados</p><p class="font-display text-2xl sm:text-3xl font-extrabold mt-1 text-eo-green">${mine.filter(s => s.estado === 'completado').length}</p></div>
+          </div>
+
+          <div class="flex gap-6 border-b border-eo-line mb-6 text-sm font-semibold">
+            <button data-tab="lista" class="pb-3 -mb-px border-b-2 ${tab === 'lista' ? 'border-eo-green text-eo-green' : 'border-transparent text-slate-500'}">Listado de trámites</button>
+            <button data-tab="nuevo" class="pb-3 -mb-px border-b-2 ${tab === 'nuevo' ? 'border-eo-green text-eo-green' : 'border-transparent text-slate-500'}">Nuevo trámite</button>
+          </div>
+          <div id="body"></div>`;
+        const body = document.getElementById('body');
+        if (tab === 'lista') {
+          if (!mine.length) { body.innerHTML = `<div class="card p-10 text-center"><span class="w-12 h-12 rounded-2xl bg-eo-mint text-eo-green grid place-items-center mx-auto mb-4">${EO.icon('folder-open', 'w-6 h-6')}</span><p class="font-semibold">Aún no tienes trámites</p><p class="text-sm text-eo-muted mt-1 mb-5">Cuando contrates un servicio, aquí verás su estado, pagos y documentos.</p><button id="emptyNew" class="btn-primary btn-sm">${EO.icon('plus', 'w-4 h-4')} Iniciar un trámite</button></div>`; document.getElementById('emptyNew').onclick = () => { tab = 'nuevo'; render(); }; }
+          else body.innerHTML = (pend.length ? `<div class="rounded-2xl border border-orange-200 bg-orange-50/70 p-4 sm:p-5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p class="flex gap-3 text-sm">${EO.icon('bell-ring', 'w-5 h-5 text-eo-amber shrink-0')}<span><b class="text-eo-amber">Tienes ${pend.length} trámite(s) esperando una acción tuya.</b><br><span class="text-slate-600 text-xs">Firma, pago de saldo o documento pendiente.</span></span></p>
+              <a href="estado.html?folio=${pend[0].folio}" class="btn-dark btn-sm shrink-0">Resolver ahora</a></div>` : '') + `
+            <div class="card overflow-hidden hidden md:block">
+              <table class="table-eo"><thead><tr><th>Folio</th><th>Trámite</th><th>Fecha</th><th>Pago</th><th>Estado</th><th></th></tr></thead>
+              <tbody>${mine.map(s => {
+                const t = EO.tramite(s.tramite), [lbl, cls] = EO.estadoCliente[s.estado];
+                const saldo = total(s) - s.pagado;
+                return `<tr><td class="font-semibold whitespace-nowrap">${s.folio}</td><td>${t.titulo}</td><td class="text-eo-muted whitespace-nowrap">${s.fecha}</td>
+                  <td>${saldo > 0 ? `<span class="pill-amber">Saldo ${EO.clp(saldo)}</span>` : '<span class="pill-green">Pagado</span>'}</td>
+                  <td><span class="${cls}">● ${s.firmado && s.estado === 'firma' ? 'Firmado' : lbl}</span></td>
+                  <td class="text-right"><a href="estado.html?folio=${s.folio}" class="btn-ghost btn-sm">Ver estado ${EO.icon('chevron-right', 'w-3.5 h-3.5')}</a></td></tr>`;
+              }).join('')}</tbody></table>
+            </div>
+            <div class="md:hidden space-y-3">${mine.map(s => {
+              const t = EO.tramite(s.tramite), [lbl, cls] = EO.estadoCliente[s.estado];
+              return `<a href="estado.html?folio=${s.folio}" class="card p-4 block"><div class="flex justify-between gap-3 mb-2"><span class="text-xs font-semibold">${s.folio}</span><span class="${cls}">● ${lbl}</span></div>
+                <p class="font-semibold text-sm">${t.titulo}</p><p class="text-xs text-eo-muted mt-1">${s.fecha}</p></a>`;
+            }).join('')}</div>`;
+        } else {
+          body.innerHTML = `<p class="font-semibold mb-1">Solicitar un nuevo trámite</p><p class="text-sm text-eo-muted mb-5">Elige el servicio. Luego completas tus datos, revisas el borrador y pagas en línea.</p>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">${EO_DATA.tramites.map(t => `
+              <a href="contratar.html?id=${t.id}&modo=50" class="card !shadow-none p-5 hover:border-eo-green hover:shadow-card transition group">
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-eo-muted">${EO.categoria(t.categoria).nombre}</span>
+                <p class="font-semibold mt-1 group-hover:text-eo-green">${t.titulo}</p>
+                <div class="flex items-center justify-between mt-3"><span class="font-display font-extrabold text-eo-green">${EO.clp(t.precio)}</span><span class="text-[11px] text-eo-muted">${t.firma ? 'Con firma FEA' : 'Sin firma'}</span></div>
+              </a>`).join('')}</div>`;
+        }
+        main.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+        document.getElementById('nuevoBtn').onclick = (e) => { e.preventDefault(); tab = 'nuevo'; render(); };
+        EO.refreshIcons();
+      }
+      render();
+    }
+    EO.refreshIcons();
+  </script>
+</body>
+</html>

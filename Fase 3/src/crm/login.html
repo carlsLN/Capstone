@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRM Easy Office · Ingreso del equipo</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-ink min-h-screen">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div class="min-h-screen grid lg:grid-cols-2">
+    <main class="bg-white flex flex-col">
+      <div class="p-6 sm:p-10" id="brand"></div>
+      <div class="flex-1 grid place-items-center px-4 pb-16">
+        <div class="w-full max-w-sm">
+          <span class="pill-ink !text-[10px] uppercase tracking-wider">CRM interno</span>
+          <h1 class="mt-4 text-3xl font-bold tracking-tight">Ingreso del equipo</h1>
+          <p class="text-sm text-eo-muted mt-1 mb-8">Acceso exclusivo para colaboradores de Easy Office.</p>
+
+          <form id="f1" class="space-y-4">
+            <div><label class="label">Correo corporativo</label><input id="mail" class="input" type="email" required value="mrojas@easyoffice.cl"></div>
+            <div><label class="label">Contraseña</label><input id="pass" class="input" type="password" required value="demo1234"></div>
+            <p id="err" class="hidden rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs p-3"></p>
+            <div id="rolBox"><label class="label">Rol (solo cuentas demo)</label>
+              <select id="rol" class="input"></select>
+              <p class="hint" id="rolDesc"></p></div>
+            <button id="go" class="btn-dark w-full">Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+            <p class="text-[11px] text-eo-muted">Con una cuenta creada en Firebase Authentication entras con tu rol real. Las cuentas @easyoffice.cl de ejemplo (contraseña demo1234) permiten probar cada rol.</p>
+          </form>
+
+          <form id="f2" class="space-y-4 hidden">
+            <div class="rounded-xl bg-eo-mint2 p-4 text-sm flex gap-3"><i data-lucide="smartphone" class="w-5 h-5 text-eo-green shrink-0"></i><span>Ingresa el código de verificación de tu app de autenticación.</span></div>
+            <input id="code" class="input text-center tracking-[.5em] font-semibold text-lg" maxlength="6" inputmode="numeric" placeholder="••••••" autocomplete="one-time-code" required>
+            <div id="codeMsg"></div><div id="codeDemo"></div>
+            <button class="btn-primary w-full"><i data-lucide="shield-check" class="w-4 h-4"></i> Verificar e ingresar</button>
+            <button type="button" id="backBtn" class="btn-ghost w-full">Volver</button>
+          </form>
+
+          <p class="mt-8 text-[11px] text-eo-muted flex items-start gap-2"><i data-lucide="scroll-text" class="w-4 h-4 shrink-0"></i> Cada ingreso, lectura de datos y descarga queda registrada en el log de auditoría.</p>
+        </div>
+      </div>
+    </main>
+    <aside class="hidden lg:flex flex-col justify-center p-16 text-white relative overflow-hidden">
+      <div class="absolute -left-24 bottom-0 w-[30rem] h-[30rem] rounded-full bg-eo-green/10 blur-3xl"></div>
+      <div class="relative max-w-md">
+        <h2 class="text-3xl font-semibold leading-tight">Todos los trámites, pagos y documentos en un solo lugar.</h2>
+        <div class="mt-10 space-y-4">
+          <div class="rounded-2xl bg-eo-ink2 border border-white/10 p-5 flex gap-4"><span class="w-10 h-10 rounded-xl bg-eo-green/15 text-eo-bright grid place-items-center shrink-0"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span><div><p class="font-semibold">Tablero de flujo</p><p class="text-sm text-slate-400">Cada pago del portal crea un ticket automáticamente.</p></div></div>
+          <div class="rounded-2xl bg-eo-ink2 border border-white/10 p-5 flex gap-4"><span class="w-10 h-10 rounded-xl bg-eo-green/15 text-eo-bright grid place-items-center shrink-0"><i data-lucide="shield-check" class="w-5 h-5"></i></span><div><p class="font-semibold">Acceso por roles</p><p class="text-sm text-slate-400">Administrador, Ejecutivo, Finanzas y Freelance.</p></div></div>
+          <div class="rounded-2xl bg-eo-ink2 border border-white/10 p-5 flex gap-4"><span class="w-10 h-10 rounded-xl bg-eo-green/15 text-eo-bright grid place-items-center shrink-0"><i data-lucide="wallet" class="w-5 h-5"></i></span><div><p class="font-semibold">Conciliación automática</p><p class="text-sm text-slate-400">Las transferencias en línea se confirman solas; las manuales las valida Finanzas.</p></div></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <script>
+    document.getElementById('brand').innerHTML = `<a href="../portal/index.html" class="inline-flex">${EO.logo()}</a>`;
+    const mails = { Administrador: 'mrojas@easyoffice.cl', Ejecutivo: 'dfuentes@easyoffice.cl', Finanzas: 'apizarro@easyoffice.cl', Freelance: 'cvega.gestora@gmail.com' };
+    const demo = Object.values(mails);
+    rol.innerHTML = Object.keys(EO_DATA.roles).map(r => `<option ${r === EO.role() ? 'selected' : ''}>${r}</option>`).join('');
+    const upd = () => { rolDesc.textContent = EO_DATA.roles[rol.value].desc; mail.value = mails[rol.value]; pass.value = 'demo1234'; };
+    rol.onchange = upd; upd();
+    const showErr = (m) => { err.textContent = m; err.classList.toggle('hidden', !m); };
+    let cuenta = null; // usuario autenticado en Firebase
+
+    f1.onsubmit = async e => {
+      e.preventDefault(); showErr('');
+      const email = mail.value.trim().toLowerCase();
+      go.disabled = true; go.innerHTML = 'Verificando…';
+      try {
+        const a = await EO_NUBE.login(email, pass.value);
+        let u = EO_DATA.equipo.find(x => (x.email || '').toLowerCase() === email);
+        if (!u) { // primera vez: se registra en el equipo con el rol elegido
+          const n = EO_DATA.equipo.reduce((m, x) => Math.max(m, parseInt(x.id.slice(1), 10) || 0), 0) + 1;
+          const nombre = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          u = { id: 'u' + n, nombre, iniciales: EO.initials(nombre), rol: rol.value, email, estado: 'Activo', ultimo: 'Ahora', uid: a.uid };
+          EO.saveUsuario(u);
+        }
+        if (u.estado !== 'Activo') throw new Error('USER_DISABLED');
+        cuenta = u;
+      } catch (ex) {
+        const m = ex.message || '';
+        if (demo.includes(email) && pass.value === 'demo1234' && /INVALID|NOT_FOUND|PASSWORD/.test(m)) cuenta = null; // cuenta de ejemplo
+        else {
+          showErr(m === 'USER_DISABLED' ? 'Tu usuario está suspendido. Habla con un administrador.' : /INVALID|NOT_FOUND|PASSWORD/.test(m) ? 'Correo o contraseña incorrectos.' : /TOO_MANY/.test(m) ? 'Demasiados intentos. Espera unos minutos.' : 'No pudimos conectar con el servidor. Revisa tu conexión.');
+          go.disabled = false; go.innerHTML = 'Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>'; EO.refreshIcons(); return;
+        }
+      }
+      go.disabled = false; go.innerHTML = 'Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>'; EO.refreshIcons();
+      enviarCodigo();
+      f1.classList.add('hidden'); f2.classList.remove('hidden');
+    };
+    // segundo factor: código de 6 dígitos que vence en 5 minutos; 3 intentos (mejora por la prueba CP-12)
+    let intentos = 3;
+    function enviarCodigo() {
+      const c = EO.codigo.enviar('crm:' + mail.value.trim().toLowerCase());
+      intentos = 3; code.value = ''; codeMsg.innerHTML = '';
+      codeDemo.innerHTML = EO.codigo.caja('tu app de autenticación', c);
+      EO.refreshIcons(); setTimeout(() => code.focus(), 50);
+    }
+    backBtn.onclick = () => { f2.classList.add('hidden'); f1.classList.remove('hidden'); };
+    f2.onsubmit = e => {
+      e.preventDefault();
+      const quien = mail.value.trim().toLowerCase();
+      if (!EO.codigo.verificar('crm:' + quien, code.value)) {
+        intentos--; code.value = '';
+        if (intentos <= 0) {
+          EO.audit('Segundo factor fallido', '—', quien + ' · 3 códigos incorrectos', 'sys');
+          showErr('Superaste los intentos del código. Vuelve a ingresar tu contraseña.');
+          f2.classList.add('hidden'); f1.classList.remove('hidden'); return;
+        }
+        codeMsg.innerHTML = `<p class="text-xs text-eo-red">Código incorrecto o vencido. Te quedan ${intentos} intento(s).</p>`;
+        return;
+      }
+      EO.crmIniciar();
+      if (cuenta) { EO.store.set('eo_role', cuenta.rol); EO.store.set('eo_uid', cuenta.id); }
+      else { EO.store.set('eo_role', rol.value); EO.store.del('eo_uid'); }
+      EO.audit('Inicio de sesión', '—', cuenta ? 'Firebase Authentication + segundo factor' : 'Cuenta de ejemplo + segundo factor');
+      const sig = EO.param('next');
+      location.href = sig && /^[a-z-]+\.html(\?[\w=&%-]*)?$/.test(sig) ? sig : 'tablero.html';
+    };
+    EO.refreshIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar sesión · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg min-h-screen">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div class="min-h-screen grid lg:grid-cols-[1fr_1.1fr]">
+    <!-- Panel marca -->
+    <aside class="hidden lg:flex flex-col justify-between bg-eo-ink text-white p-12 relative overflow-hidden">
+      <div class="absolute -right-32 -top-32 w-[28rem] h-[28rem] rounded-full bg-eo-green/10 blur-3xl"></div>
+      <a href="index.html" id="brand" class="relative"></a>
+      <div class="relative max-w-md">
+        <span class="eyebrow !text-eo-bright">Portal de trámites corporativos</span>
+        <h1 class="mt-4 text-4xl font-semibold leading-tight">Tu empresa en orden, desde un solo lugar.</h1>
+        <ul class="mt-8 space-y-4 text-sm text-slate-300">
+          <li class="flex gap-3"><i data-lucide="id-card" class="w-5 h-5 text-eo-bright shrink-0"></i> Cuenta verificada con código a tu correo y celular.</li>
+          <li class="flex gap-3"><i data-lucide="smartphone" class="w-5 h-5 text-eo-bright shrink-0"></i> Cada ingreso se confirma con un código a tu correo o celular.</li>
+          <li class="flex gap-3"><i data-lucide="activity" class="w-5 h-5 text-eo-bright shrink-0"></i> Sigue el estado de cada trámite en tiempo real.</li>
+          <li class="flex gap-3"><i data-lucide="folder-lock" class="w-5 h-5 text-eo-bright shrink-0"></i> Descarga contratos, certificados y comprobantes.</li>
+        </ul>
+      </div>
+      <p class="relative text-xs text-slate-500">Conexión cifrada · Datos tratados según la Ley 21.719</p>
+    </aside>
+
+    <!-- Formulario -->
+    <main class="flex flex-col">
+      <div class="p-5 flex justify-between items-center">
+        <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-sm text-eo-muted hover:text-eo-green"><i data-lucide="arrow-left" class="w-4 h-4"></i> Volver</a>
+        <a href="index.html" class="lg:hidden" id="brandM"></a>
+      </div>
+      <div class="flex-1 grid place-items-center px-4 pb-12">
+        <div class="w-full max-w-md">
+          <div class="text-center mb-7">
+            <h2 class="text-2xl font-bold">Portal Easy Office</h2>
+            <p id="ctx" class="text-sm text-eo-muted mt-1">Ingresa para contratar y seguir tus trámites.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-1 rounded-full bg-white border border-eo-line p-1 mb-6 text-sm" id="tabs">
+            <button data-t="login" class="rounded-full py-2 font-semibold">Iniciar sesión</button>
+            <button data-t="reg" class="rounded-full py-2 font-semibold">Crear cuenta</button>
+          </div>
+          <div class="card p-6 sm:p-7" id="box"></div>
+          <p class="text-center text-xs text-eo-muted mt-6">¿Eres parte del equipo? <a href="../crm/login.html" class="text-eo-green font-semibold">Ingresa al CRM</a></p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('brand').innerHTML = `<span class="flex items-center gap-3">${EO.logo({ dark: true })}</span>`;
+    document.getElementById('brandM').innerHTML = EO.logo({ size: 'sm' });
+    const next = EO.param('next') || 'mis-tramites.html';
+    if (EO.param('next')) ctx.textContent = 'Ingresa o crea tu cuenta para continuar con tu trámite.';
+    const box = document.getElementById('box');
+    const N = window.EO_NUBE;
+    // cuenta de ejemplo para presentar la demo sin crear una cuenta
+    const DEMO = { email: 'camila.munoz@cordillera.cl', pass: 'demo1234', nombre: 'Camila Fernanda Muñoz Silva', run: '15.842.931-4', documento: '527.893.125', fono: '+56 9 6328 1142', identidad: 'verificada' };
+    let tab = EO.param('tab') === 'reg' ? 'reg' : 'login';
+
+    const err = (m) => `<div class="rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs p-3 flex gap-2">${EO.icon('circle-alert', 'w-4 h-4 shrink-0')}<span>${m}</span></div>`;
+    const warn = (m) => `<div class="rounded-xl bg-orange-50 border border-orange-200 text-eo-amber text-xs p-3 flex gap-2">${EO.icon('triangle-alert', 'w-4 h-4 shrink-0')}<span>${m}</span></div>`;
+    function hint(el, ok, msg) {
+      const h = el.parentElement.querySelector('.hint');
+      el.classList.toggle('is-valid', ok === true); el.classList.toggle('is-invalid', ok === false);
+      if (h) { h.className = 'hint ' + (ok === null ? '' : ok ? 'ok' : 'err'); h.textContent = msg; }
+    }
+    function setTab(t) {
+      tab = t;
+      document.querySelectorAll('#tabs button').forEach(b => b.className = 'rounded-full py-2 font-semibold transition ' + (b.dataset.t === t ? 'bg-eo-ink text-white' : 'text-slate-500'));
+      t === 'login' ? loginCred() : regStep(R.step);
+    }
+    document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+
+    function entrar(perfil) {
+      EO.login({ nombre: perfil.nombre, run: perfil.run, email: perfil.email, fono: perfil.fono, uid: perfil.uid || null, identidad: perfil.identidad || 'verificada', metodo: 'correo', verificado: true });
+      EO.toast('Ingreso verificado. ¡Bienvenida/o!');
+      setTimeout(() => location.href = next, 700);
+    }
+
+    /* ================= INICIO DE SESIÓN ================= */
+    let L = {};
+    function loginCred(prefill) {
+      box.innerHTML = `
+        <form id="lf" class="space-y-4" novalidate>
+          <div><label class="label">Correo electrónico</label><input id="lMail" class="input" type="email" autocomplete="username" required placeholder="nombre@empresa.cl" value="${EO.esc(prefill || DEMO.email)}"></div>
+          <div><div class="flex justify-between"><label class="label">Contraseña</label><a href="#" id="olv" class="text-[11px] text-eo-green font-semibold">¿La olvidaste?</a></div>
+            <div class="relative"><input id="lPass" class="input pr-11" type="password" autocomplete="current-password" required value="${prefill ? '' : DEMO.pass}">
+            <button type="button" id="eye" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" aria-label="Mostrar contraseña">${EO.icon('eye', 'w-4 h-4')}</button></div></div>
+          <div id="lCap"></div>
+          <div id="lMsg"></div>
+          <button id="lBtn" class="btn-primary w-full">Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+          <p class="text-[11px] text-eo-muted text-center">Cuenta de prueba: ${DEMO.email} · ${DEMO.pass}</p>
+        </form>`;
+      const cap = EO.captcha(document.getElementById('lCap'));
+      eye.onclick = () => { lPass.type = lPass.type === 'password' ? 'text' : 'password'; };
+      olv.onclick = (e) => { e.preventDefault(); EO.toast('Si el correo está registrado, te enviaremos un enlace para restablecer tu contraseña.', 'mail'); };
+      const lockView = () => {
+        const a = EO.intentos.get(lMail.value);
+        if (!a.hasta) return false;
+        const min = Math.ceil((a.hasta - Date.now()) / 60000);
+        lMsg.innerHTML = err(`Bloqueamos el ingreso con este correo por 5 intentos fallidos. Podrás intentarlo de nuevo en ${min} minuto(s), o restablecer tu contraseña.`);
+        lBtn.disabled = true; EO.refreshIcons(); return true;
+      };
+      lMail.oninput = () => { lBtn.disabled = false; lMsg.innerHTML = ''; lockView(); };
+      lockView();
+      lf.onsubmit = async (e) => {
+        e.preventDefault(); lMsg.innerHTML = '';
+        const email = lMail.value.trim().toLowerCase(), pass = lPass.value;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { lMsg.innerHTML = err('Ingresa un correo válido.'); EO.refreshIcons(); return; }
+        if (lockView()) return;
+        if (!cap.valido()) { lMsg.innerHTML = warn('Marca «No soy un robot» para continuar.'); EO.refreshIcons(); return; }
+        lBtn.disabled = true; lBtn.innerHTML = 'Verificando…';
+        let perfil = null, fallo = false;
+        try {
+          const a = await N.login(email, pass);
+          const c = await N.leerDoc('clientes', a.uid);
+          perfil = Object.assign({ email, nombre: email.split('@')[0], run: '', fono: '' }, c || {}, { uid: a.uid });
+        } catch (ex) {
+          const m = ex.message || '';
+          if (email === DEMO.email && pass === DEMO.pass) perfil = Object.assign({}, DEMO);
+          else if (/INVALID|NOT_FOUND|PASSWORD/.test(m)) fallo = true;
+          else if (/TOO_MANY/.test(m)) { lMsg.innerHTML = err('Demasiados intentos desde este equipo. Espera unos minutos.'); }
+          else if (/USER_DISABLED/.test(m)) { lMsg.innerHTML = err('Esta cuenta está deshabilitada. Escríbenos para revisarla.'); }
+          else lMsg.innerHTML = err('No pudimos conectar con el servidor. Revisa tu conexión.');
+        }
+        lBtn.disabled = false; lBtn.innerHTML = 'Continuar ' + EO.icon('arrow-right', 'w-4 h-4');
+        if (fallo) {
+          const a = EO.intentos.fallo(email), quedan = EO.intentos.MAX - a.n;
+          cap.reset(); lPass.value = '';
+          if (quedan <= 0) { EO.audit('Cuenta bloqueada por intentos fallidos', '—', `${email} · ${EO.intentos.MAX} intentos`, 'sys'); lockView(); return; }
+          lMsg.innerHTML = quedan === 1 ? err('Correo o contraseña incorrectos. <b>Te queda 1 intento</b> antes de bloquear el ingreso por 15 minutos.')
+            : err(`Correo o contraseña incorrectos. <b>Te quedan ${quedan} intentos.</b>`);
+        }
+        EO.refreshIcons();
+        if (perfil) { EO.intentos.limpiar(email); L = { perfil }; loginCanal(); }
+      };
+      EO.refreshIcons();
+    }
+
+    function loginCanal() {
+      const p = L.perfil;
+      const opciones = [['correo', 'mail', 'Correo electrónico', EO.maskEmail(p.email)]].concat(p.fono ? [['sms', 'smartphone', 'Mensaje de texto (SMS)', EO.maskFono(p.fono)]] : []);
+      L.canal = L.canal || 'correo';
+      box.innerHTML = `
+        <span class="w-12 h-12 rounded-2xl bg-eo-mint text-eo-green grid place-items-center mb-4">${EO.icon('shield-check', 'w-6 h-6')}</span>
+        <h3 class="text-lg font-bold">Confirma que eres tú</h3>
+        <p class="text-sm text-eo-muted mt-1 mb-5">Te enviaremos un código de 6 dígitos. Elige dónde quieres recibirlo.</p>
+        <div class="space-y-3">${opciones.map(([id, ic, n, d]) => `
+          <label class="flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition ${L.canal === id ? 'border-eo-green bg-eo-mint2' : 'border-eo-line hover:border-eo-border'}">
+            <input type="radio" name="canal" value="${id}" class="sr-only" ${L.canal === id ? 'checked' : ''}>
+            <span class="w-10 h-10 rounded-lg bg-white border border-eo-line grid place-items-center text-slate-600">${EO.icon(ic, 'w-5 h-5')}</span>
+            <span class="flex-1"><span class="block text-sm font-semibold">${n}</span><span class="block text-xs text-eo-muted">${EO.esc(d)}</span></span>
+            <span class="w-5 h-5 rounded-full border-2 grid place-items-center ${L.canal === id ? 'border-eo-green' : 'border-slate-300'}">${L.canal === id ? '<span class="w-2.5 h-2.5 rounded-full bg-eo-green"></span>' : ''}</span>
+          </label>`).join('')}</div>
+        <button id="send" class="btn-primary w-full mt-5">${EO.icon('send', 'w-4 h-4')} Enviar código</button>
+        <button id="volver" class="btn-ghost w-full mt-2">Usar otra cuenta</button>`;
+      box.querySelectorAll('[name=canal]').forEach(r => r.closest('label').onclick = (e) => { e.preventDefault(); L.canal = r.value; loginCanal(); });
+      send.onclick = () => loginCodigo();
+      volver.onclick = () => loginCred();
+      EO.refreshIcons();
+    }
+
+    function inputsCodigo(id) {
+      return `<div class="flex justify-between gap-2" id="${id}">${[0, 1, 2, 3, 4, 5].map(i => `<input inputmode="numeric" maxlength="1" data-i="${i}" class="input !px-0 w-12 h-14 text-center text-xl font-bold" aria-label="Dígito ${i + 1}">`).join('')}</div>`;
+    }
+    function bindCodigo(id, onFull) {
+      const ins = [...document.querySelectorAll('#' + id + ' input')];
+      const val = () => ins.map(x => x.value).join('');
+      ins.forEach((x, i) => {
+        x.oninput = () => { x.value = x.value.replace(/\D/g, '').slice(-1); if (x.value && ins[i + 1]) ins[i + 1].focus(); if (val().length === 6) onFull(val()); };
+        x.onkeydown = (e) => { if (e.key === 'Backspace' && !x.value && ins[i - 1]) ins[i - 1].focus(); };
+        x.onpaste = (e) => { const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6); if (d.length) { e.preventDefault(); d.split('').forEach((c, j) => { if (ins[j]) ins[j].value = c; }); if (d.length === 6) onFull(d); } };
+      });
+      ins[0].focus();
+      return { val, clear: () => { ins.forEach(x => x.value = ''); ins[0].focus(); } };
+    }
+
+    function loginCodigo() {
+      const p = L.perfil, destino = L.canal === 'sms' ? EO.maskFono(p.fono) : EO.maskEmail(p.email);
+      const c = EO.codigo.enviar('login:' + p.email);
+      L.tries = 3;
+      box.innerHTML = `
+        <button id="atras" class="inline-flex items-center gap-1 text-xs text-eo-muted hover:text-eo-green mb-4">${EO.icon('arrow-left', 'w-3.5 h-3.5')} Cambiar método</button>
+        <h3 class="text-lg font-bold">Ingresa el código</h3>
+        <p class="text-sm text-eo-muted mt-1 mb-5">Lo enviamos ${L.canal === 'sms' ? 'por SMS al' : 'al correo'} <b class="text-eo-ink">${EO.esc(destino)}</b>.</p>
+        ${inputsCodigo('cod')}
+        <div id="cMsg" class="mt-4"></div>
+        <div class="mt-4">${EO.codigo.caja(destino, c)}</div>
+        <button id="reenv" class="btn-ghost w-full mt-4" disabled>Reenviar código en <span id="seg">30</span> s</button>`;
+      const k = bindCodigo('cod', (v) => {
+        if (EO.codigo.verificar('login:' + p.email, v)) { entrar(p); return; }
+        L.tries--; k.clear();
+        if (L.tries <= 0) { EO.toast('Superaste los intentos del código. Vuelve a ingresar.', 'alert-circle'); return loginCred(p.email); }
+        cMsg.innerHTML = err(`Código incorrecto. Te quedan ${L.tries} intento(s).`); EO.refreshIcons();
+      });
+      atras.onclick = () => loginCanal();
+      let s = 30; clearInterval(L.timer);
+      L.timer = setInterval(() => { s--; const el = document.getElementById('seg'); if (!el) return clearInterval(L.timer); el.textContent = s; if (s <= 0) { clearInterval(L.timer); reenv.disabled = false; reenv.textContent = 'Reenviar código'; } }, 1000);
+      reenv.onclick = () => loginCodigo();
+      EO.refreshIcons();
+    }
+
+    /* ================= REGISTRO EN 2 PASOS ================= */
+    const R = { step: 1, v: {}, ver: {} };
+    const pasosReg = ['Tus datos', 'Verificación'];
+    function regHead() {
+      return `<ol class="flex items-center gap-2 mb-6">${pasosReg.map((n, i) => {
+        const k = i + 1, done = k < R.step, cur = k === R.step;
+        return `<li class="flex-1"><div class="h-1.5 rounded-full ${done || cur ? 'bg-eo-green' : 'bg-slate-200'}"></div><p class="mt-2 text-[11px] ${cur ? 'font-bold text-eo-ink' : done ? 'text-eo-green' : 'text-slate-400'}">${k}. ${n}</p></li>`;
+      }).join('')}</ol>`;
+    }
+    function regStep(n) {
+      R.step = n;
+      [, reg1, reg2][n]();
+      EO.refreshIcons();
+    }
+
+    function reg1() {
+      const v = R.v;
+      const maxNac = new Date(); maxNac.setFullYear(maxNac.getFullYear() - 18);
+      box.innerHTML = regHead() + `
+        <form id="r1" class="space-y-4" novalidate>
+          <div><label class="label">Nombre completo *</label><input id="rNom" class="input" required placeholder="Nombres y apellidos" value="${EO.esc(v.nombre || '')}"><p class="hint"></p></div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="label">RUN *</label><input id="rRun" class="input" required placeholder="12.345.678-5" value="${EO.esc(v.run || '')}"><p class="hint">Formato: 12.345.678-5</p></div>
+            <div><label class="label">N° de documento *</label><input id="rDoc" class="input" required placeholder="527.893.125" value="${EO.esc(v.documento || '')}"><p class="hint">Está en tu cédula, junto a «Número documento».</p></div>
+          </div>
+          <div><label class="label">Fecha de nacimiento *</label><input id="rNac" type="date" class="input" required max="${maxNac.toISOString().slice(0, 10)}" value="${EO.esc(v.nacimiento || '')}"><p class="hint">Debes ser mayor de 18 años.</p></div>
+          <div><label class="label">Correo electrónico *</label><input id="rMail" type="email" class="input" required placeholder="nombre@empresa.cl" value="${EO.esc(v.email || '')}"><p class="hint"></p></div>
+          <div><label class="label">Celular *</label><input id="rFono" class="input" required placeholder="+56 9 1234 5678" value="${EO.esc(v.fono || '+56 9 ')}"><p class="hint"></p></div>
+          <div id="r1Msg"></div>
+          <button class="btn-primary w-full">Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+        </form>`;
+      const chk = {
+        rNom: () => rNom.value.trim().split(/\s+/).length >= 2 ? [true, ''] : [false, 'Escribe tu nombre y al menos un apellido.'],
+        rRun: () => EO.rut.valid(rRun.value) ? [true, 'RUN válido.'] : [false, 'RUN inválido: revisa el dígito verificador.'],
+        rDoc: () => EO.docValido(rDoc.value) ? [true, 'Número de documento válido.'] : [false, 'Debe tener 9 dígitos (ej. 527.893.125).'],
+        rNac: () => !rNac.value ? [false, 'Ingresa tu fecha de nacimiento.'] : EO.edad(rNac.value) < 18 ? [false, 'Debes ser mayor de 18 años para crear una cuenta.'] : EO.edad(rNac.value) > 110 ? [false, 'Revisa la fecha.'] : [true, `Edad: ${EO.edad(rNac.value)} años.`],
+        rMail: () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rMail.value.trim()) ? [true, ''] : [false, 'Correo no válido.'],
+        rFono: () => rFono.value.replace(/\D/g, '').replace(/^56/, '').length === 9 ? [true, ''] : [false, 'Incluye los 9 dígitos de tu celular.'],
+      };
+      Object.keys(chk).forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('blur', () => {
+          if (id === 'rRun' && el.value) el.value = EO.rut.format(el.value);
+          if (id === 'rDoc' && el.value) el.value = EO.docFormat(el.value);
+          if (el.value.trim() && el.value.trim() !== '+56 9') { const [ok, m] = chk[id](); hint(el, ok, m); }
+        });
+      });
+      r1.onsubmit = (e) => {
+        e.preventDefault(); r1Msg.innerHTML = '';
+        rRun.value = rRun.value && EO.rut.format(rRun.value); rDoc.value = rDoc.value && EO.docFormat(rDoc.value);
+        let bad = false;
+        Object.keys(chk).forEach(id => { const [ok, m] = chk[id](); hint(document.getElementById(id), ok, m); if (!ok) bad = true; });
+        if (bad) { r1Msg.innerHTML = err('Revisa los campos marcados en rojo.'); EO.refreshIcons(); return; }
+        const run = EO.rut.clean(rRun.value), mail = rMail.value.trim().toLowerCase();
+        if ((EO_DATA.clientes || []).some(c => EO.rut.clean(c.run) === run) || run === EO.rut.clean(DEMO.run)) { r1Msg.innerHTML = err('Ya existe una cuenta con este RUN. <a href="#" id="toLogin" class="underline font-semibold">Inicia sesión</a>.'); EO.refreshIcons(); toLogin.onclick = (ev) => { ev.preventDefault(); setTab('login'); }; return; }
+        Object.assign(R.v, { nombre: rNom.value.trim().replace(/\s+/g, ' '), run: rRun.value, documento: rDoc.value, nacimiento: rNac.value, email: mail, fono: rFono.value.trim() });
+        if (R.v.email !== R.ver.emailDe) R.ver.email = false;
+        if (R.v.fono !== R.ver.fonoDe) R.ver.fono = false;
+        regStep(2);
+      };
+    }
+
+    function reg2() {
+      const v = R.v;
+      const fila = (k, ic, n, d) => `<div class="rounded-xl border border-eo-line p-4">
+          <div class="flex items-center gap-3"><span class="w-9 h-9 rounded-lg bg-eo-mint text-eo-green grid place-items-center shrink-0">${EO.icon(ic, 'w-[18px] h-[18px]')}</span>
+            <span class="flex-1 min-w-0"><span class="block text-sm font-semibold">${n}</span><span class="block text-xs text-eo-muted truncate">${EO.esc(d)}</span></span>
+            ${R.ver[k] ? `<span class="pill-green">${EO.icon('check', 'w-3.5 h-3.5')} Verificado</span>` : `<button type="button" data-env="${k}" class="btn-outline btn-sm">Enviar código</button>`}</div>
+          <div id="v_${k}"></div></div>`;
+      box.innerHTML = regHead() + `
+        <form id="r3" class="space-y-4" novalidate>
+          <div class="space-y-3">${fila('email', 'mail', 'Verifica tu correo', v.email)}${fila('fono', 'smartphone', 'Verifica tu celular', v.fono)}</div>
+          <div><label class="label">Crea una contraseña *</label><input id="p1" type="password" class="input" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+            <ul id="pReq" class="mt-2 grid grid-cols-2 gap-1 text-[11px]"></ul></div>
+          <div><label class="label">Repite la contraseña *</label><input id="p2" type="password" class="input" autocomplete="new-password"><p class="hint"></p></div>
+          <div id="rCap"></div>
+          <label class="flex gap-2 text-xs text-eo-muted"><input id="terms" type="checkbox" class="mt-0.5 accent-eo-green"> Acepto los términos y la política de privacidad.</label>
+          <div id="r3Msg"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" id="r3Back" class="btn-outline">${EO.icon('arrow-left', 'w-4 h-4')} Atrás</button>
+            <button id="r3Go" class="btn-primary">Crear cuenta</button>
+          </div>
+        </form>`;
+      const cap = EO.captcha(document.getElementById('rCap'));
+      const reqs = () => [[p1.value.length >= 8, '8 caracteres o más'], [/[A-Z]/.test(p1.value), 'Una mayúscula'], [/[a-z]/.test(p1.value), 'Una minúscula'], [/\d/.test(p1.value), 'Un número']];
+      const pintar = () => { pReq.innerHTML = reqs().map(([ok, n]) => `<li class="flex items-center gap-1 ${ok ? 'text-eo-green' : 'text-slate-400'}">${EO.icon(ok ? 'circle-check' : 'circle', 'w-3.5 h-3.5')} ${n}</li>`).join(''); EO.refreshIcons(); };
+      p1.oninput = pintar; pintar();
+      p2.onblur = () => p2.value && hint(p2, p2.value === p1.value, p2.value === p1.value ? 'Las contraseñas coinciden.' : 'Las contraseñas no coinciden.');
+      box.querySelectorAll('[data-env]').forEach(b => b.onclick = () => {
+        const k = b.dataset.env, destino = k === 'email' ? v.email : v.fono, c = EO.codigo.enviar('reg:' + k);
+        const cont = document.getElementById('v_' + k);
+        b.textContent = 'Reenviar';
+        cont.innerHTML = `<div class="mt-3 space-y-3">${inputsCodigo('c_' + k)}${EO.codigo.caja(k === 'email' ? EO.maskEmail(destino) : EO.maskFono(destino), c)}</div>`;
+        bindCodigo('c_' + k, (val) => {
+          if (!EO.codigo.verificar('reg:' + k, val)) { EO.toast('Código incorrecto. Revísalo e intenta otra vez.', 'alert-circle'); return; }
+          R.ver[k] = true; R.ver[k + 'De'] = destino;
+          const keep = p1.value, keep2 = p2.value, t = terms.checked; reg2(); p1.value = keep; p2.value = keep2; terms.checked = t; p1.oninput();
+          EO.toast(k === 'email' ? 'Correo verificado.' : 'Celular verificado.'); EO.refreshIcons();
+        });
+        EO.refreshIcons();
+      });
+      r3Back.onclick = () => regStep(1);
+      r3.onsubmit = async (e) => {
+        e.preventDefault(); r3Msg.innerHTML = '';
+        const falta = !R.ver.email ? 'Verifica tu correo con el código.' : !R.ver.fono ? 'Verifica tu celular con el código.'
+          : !reqs().every(r => r[0]) ? 'La contraseña no cumple los requisitos.' : p1.value !== p2.value ? 'Las contraseñas no coinciden.'
+          : !cap.valido() ? 'Marca «No soy un robot».' : !terms.checked ? 'Debes aceptar los términos.' : '';
+        if (falta) { r3Msg.innerHTML = warn(falta); EO.refreshIcons(); return; }
+        r3Go.disabled = true; r3Go.textContent = 'Creando tu cuenta…';
+        try {
+          const a = await N.registrar(v.email, p1.value);
+          const perfil = {
+            uid: a.uid, nombre: v.nombre, run: v.run, documento: v.documento, nacimiento: v.nacimiento, email: v.email, fono: v.fono,
+            emailVerificado: true, fonoVerificado: true, identidad: 'verificada', creado: new Date().toISOString(),
+          };
+          await N.guardarComo(a.idToken, 'clientes', a.uid, perfil);
+          EO_DATA.clientes = [perfil].concat(EO_DATA.clientes || []); N.persist();
+          EO.audit('Cuenta de cliente creada', '—', `${v.nombre} · RUN ${v.run} · correo y celular verificados`, 'sys');
+          entrar(perfil);
+        } catch (ex) {
+          const m = ex.message || '';
+          r3Msg.innerHTML = err(/EMAIL_EXISTS/.test(m) ? 'Ya existe una cuenta con este correo. Inicia sesión o usa otro correo.'
+            : /WEAK_PASSWORD/.test(m) ? 'La contraseña es muy débil.' : /TOO_MANY/.test(m) ? 'Demasiados intentos. Espera unos minutos.'
+            : 'No pudimos crear la cuenta. Revisa tu conexión e intenta de nuevo.');
+          r3Go.disabled = false; r3Go.textContent = 'Crear cuenta'; EO.refreshIcons();
+        }
+      };
+    }
+
+    setTab(tab);
+  </script>
+</body>
+</html>

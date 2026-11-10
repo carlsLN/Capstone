@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catálogo de trámites · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="header"></div>
+
+  <!-- HERO + BUSCADOR -->
+  <section class="relative bg-eo-ink text-white overflow-hidden">
+    <div class="absolute inset-0" style="background: radial-gradient(60% 80% at 80% 0%, rgba(34,197,94,.18), transparent 60%), radial-gradient(50% 70% at 0% 100%, rgba(34,197,94,.10), transparent 60%);"></div>
+    <div class="container-eo relative py-16 sm:py-20 text-center">
+      <span class="pill bg-eo-green/15 text-eo-bright border border-eo-green/30 uppercase tracking-wider !text-[10px]">Emprendedores & Pymes</span>
+      <h1 class="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight">Digitaliza y gestiona todos<br class="hidden sm:block"> los trámites de tu negocio</h1>
+      <p class="mt-4 text-slate-300 max-w-2xl mx-auto">Catálogo unificado para la constitución, representación tributaria, documentos y administración contable de tu empresa.</p>
+
+      <div class="relative max-w-2xl mx-auto mt-8 text-left">
+        <div class="flex items-center gap-2 rounded-full bg-white/10 border border-white/15 backdrop-blur p-1.5 pl-5 focus-within:border-eo-bright">
+          <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+          <input id="q" autocomplete="off" class="flex-1 bg-transparent py-2.5 text-white placeholder:text-slate-400 focus:outline-none" placeholder="¿Qué trámite o servicio necesitas hoy?">
+          <button id="qBtn" class="btn-primary !rounded-full !py-2.5">Buscar</button>
+        </div>
+        <div id="suggest" class="hidden absolute left-0 right-0 mt-2 card p-2 text-eo-ink z-20"></div>
+      </div>
+      <div class="mt-5 flex flex-wrap justify-center items-center gap-2 text-xs text-slate-400">
+        <span>Búsquedas frecuentes:</span>
+        <button class="chip rounded-full bg-white/5 border border-white/10 px-3 py-1 text-slate-300 hover:bg-white/10">Domicilio</button>
+        <button class="chip rounded-full bg-white/5 border border-white/10 px-3 py-1 text-slate-300 hover:bg-white/10">Constitución</button>
+        <button class="chip rounded-full bg-white/5 border border-white/10 px-3 py-1 text-slate-300 hover:bg-white/10">Contrato</button>
+        <button class="chip rounded-full bg-white/5 border border-white/10 px-3 py-1 text-slate-300 hover:bg-white/10">Firma</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LÍNEAS DE NEGOCIO -->
+  <section class="py-16">
+    <div class="container-eo">
+      <div class="grid lg:grid-cols-[1.3fr_1fr] gap-6 items-end mb-10">
+        <div><span class="pill-green uppercase tracking-wider !text-[10px]">Líneas de negocio</span>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight">Servicios estructurados para cada etapa de tu empresa</h2></div>
+        <p class="text-eo-muted text-sm lg:text-right">Selecciona una categoría para revisar requisitos, pasos de solicitud y tarifas transparentes.</p>
+      </div>
+
+      <div class="flex gap-2 overflow-x-auto scroll-thin pb-2 mb-8" id="tabs"></div>
+
+      <div class="flex items-center justify-between mb-4 text-sm">
+        <p class="text-eo-muted"><b id="count" class="text-eo-ink">0</b> trámites disponibles</p>
+        <select id="sort" class="input !w-auto !py-2 !text-xs">
+          <option value="pop">Más solicitados</option><option value="asc">Precio: menor a mayor</option><option value="desc">Precio: mayor a menor</option>
+        </select>
+      </div>
+      <div id="grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      <div id="empty" class="hidden card p-12 text-center">
+        <span class="w-12 h-12 rounded-full bg-eo-mint text-eo-green grid place-items-center mx-auto mb-4"><i data-lucide="search-x" class="w-6 h-6"></i></span>
+        <h3 class="font-bold mb-1">No encontramos ese trámite</h3>
+        <p class="text-sm text-eo-muted mb-5">Prueba con otra palabra o cuéntanos lo que necesitas.</p>
+        <a href="index.html#contacto" class="btn-primary btn-sm">Hablar con un ejecutivo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÉTRICAS -->
+  <section class="bg-eo-ink text-white">
+    <div class="container-eo py-12 grid grid-cols-2 lg:grid-cols-4 gap-8">
+      <div><p class="font-display text-4xl font-extrabold text-eo-bright">5k+</p><p class="text-xs text-slate-400 mt-1">Empresas constituidas con éxito</p></div>
+      <div><p class="font-display text-4xl font-extrabold text-eo-bright">99,2%</p><p class="text-xs text-slate-400 mt-1">Aprobación en trámites SII</p></div>
+      <div><p class="font-display text-4xl font-extrabold text-eo-bright">24h</p><p class="text-xs text-slate-400 mt-1">Tiempo promedio de respuesta</p></div>
+      <div><p class="font-display text-4xl font-extrabold text-eo-bright">100%</p><p class="text-xs text-slate-400 mt-1">Firma con validez legal</p></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16">
+    <div class="container-eo grid md:grid-cols-[1.4fr_1fr] gap-8 items-center">
+      <div><h2 class="text-2xl sm:text-3xl font-bold tracking-tight">¿No encuentras el trámite que necesitas?</h2>
+        <p class="mt-3 text-eo-muted text-sm max-w-xl">Nuestros asesores pueden estructurar flujos personalizados o mandatos especiales ante instituciones públicas. Cotiza sin costo.</p></div>
+      <div class="flex flex-wrap gap-3 md:justify-end">
+        <button onclick="EO.toast('Descargando tarifario 2026 en PDF…','download')" class="btn-outline">Ver tarifario completo</button>
+        <a href="index.html#contacto" class="btn-primary">Hablar con un ejecutivo</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="footer"></div>
+
+  <script>
+    EO.mountPortal('catalogo');
+    const D = EO_DATA;
+    let cat = EO.param('cat') || 'todos';
+    const q = document.getElementById('q');
+
+    function renderTabs() {
+      const all = [['todos', 'Todos', 'layout-grid'], ...D.categorias.map(c => [c.id, c.nombre, c.icono])];
+      document.getElementById('tabs').innerHTML = all.map(([id, n, ic]) => `
+        <button data-cat="${id}" class="shrink-0 inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold border transition ${cat === id ? 'bg-eo-ink text-white border-eo-ink' : 'bg-white border-eo-line text-slate-600 hover:border-eo-green hover:text-eo-green'}">
+          ${EO.icon(ic)} ${n}</button>`).join('');
+      document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { cat = b.dataset.cat; renderTabs(); render(); });
+    }
+
+    function render() {
+      const term = q.value.trim().toLowerCase();
+      let list = D.tramites.filter(t => (cat === 'todos' || t.categoria === cat));
+      if (term) list = list.filter(t => (t.titulo + ' ' + t.resumen + ' ' + EO.categoria(t.categoria).nombre).toLowerCase().includes(term));
+      const s = document.getElementById('sort').value;
+      if (s === 'asc') list.sort((a, b) => a.precio - b.precio);
+      else if (s === 'desc') list.sort((a, b) => b.precio - a.precio);
+      else list.sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
+      document.getElementById('grid').innerHTML = list.map(EO.tramiteCard).join('');
+      document.getElementById('count').textContent = list.length;
+      document.getElementById('empty').classList.toggle('hidden', list.length > 0);
+      EO.refreshIcons();
+    }
+
+    // autocompletado
+    const sug = document.getElementById('suggest');
+    q.addEventListener('input', () => {
+      const term = q.value.trim().toLowerCase();
+      if (term.length < 2) { sug.classList.add('hidden'); render(); return; }
+      const hits = D.tramites.filter(t => t.titulo.toLowerCase().includes(term) || t.resumen.toLowerCase().includes(term)).slice(0, 5);
+      sug.innerHTML = hits.length ? hits.map(t => `<a href="tramite.html?id=${t.id}" class="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 hover:bg-eo-mint">
+          <span class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-eo-mint text-eo-green grid place-items-center">${EO.icon(EO.categoria(t.categoria).icono)}</span>
+          <span><span class="block text-sm font-semibold">${t.titulo}</span><span class="text-[11px] text-eo-muted">${EO.categoria(t.categoria).nombre}</span></span></span>
+          <span class="text-sm font-bold">${EO.clp(t.precio)}</span></a>`).join('')
+        : '<p class="px-3 py-3 text-sm text-eo-muted">Sin coincidencias.</p>';
+      sug.classList.remove('hidden');
+      EO.refreshIcons();
+      render();
+    });
+    document.addEventListener('click', e => { if (!sug.contains(e.target) && e.target !== q) sug.classList.add('hidden'); });
+    document.getElementById('qBtn').onclick = () => { sug.classList.add('hidden'); render(); document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('qBtn').click(); });
+    document.querySelectorAll('.chip').forEach(c => c.onclick = () => { q.value = c.textContent; cat = 'todos'; renderTabs(); document.getElementById('qBtn').click(); });
+    document.getElementById('sort').onchange = render;
+    if (EO.param('q')) q.value = EO.param('q');
+    renderTabs(); render();
+  </script>
+</body>
+</html>

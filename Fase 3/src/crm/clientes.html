@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clientes · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+  <script src="../assets/xlsx.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+  <!-- Panel lateral -->
+  <div id="drawer" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-eo-ink/40" onclick="drawer.classList.add('hidden')"></div>
+    <aside id="drawerBody" class="absolute right-0 inset-y-0 w-full max-w-md bg-white shadow-2xl overflow-y-auto p-6 fade-in"></aside>
+  </div>
+
+  <script>
+    EO.mountCrm('clientes', 'Clientes', 'Empresas y personas que han contratado servicios');
+    const D = EO_DATA, main = document.getElementById('main');
+    let q = '', fSuc = '';
+    function clientes() {
+      const m = {};
+      EO.solicitudes().forEach(s => {
+        const c = m[s.rut] || (m[s.rut] = { rut: s.rut, nombre: s.cliente, contacto: s.contacto, email: s.email, fono: s.fono, sucursal: s.sucursal, tramites: [], pagado: 0 });
+        c.tramites.push(s); c.pagado += s.pagado;
+      });
+      return Object.values(m);
+    }
+    function cuentas() {
+      const C = EO_DATA.clientes || [];
+      if (!C.length) return '';
+      const ok = (b, n) => `<span class="inline-flex items-center gap-1 ${b ? 'text-eo-green' : 'text-slate-400'}">${EO.icon(b ? 'circle-check' : 'circle', 'w-3.5 h-3.5')} ${n}</span>`;
+      return `<section id="cuentas" class="card mb-6 overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-eo-line">
+          <div><h2 class="font-semibold flex items-center gap-2">${EO.icon('id-card', 'w-4 h-4 text-eo-green')} Cuentas del portal <span class="pill-gray">${C.length}</span></h2>
+          <p class="text-xs text-eo-muted mt-0.5">Personas registradas en el portal. La cuenta queda verificada al confirmar el código enviado a su correo y a su celular; no requiere revisión de un ejecutivo.</p></div></div>
+        <div class="overflow-x-auto"><table class="table-eo min-w-[820px]"><thead><tr><th>Titular</th><th>RUN</th><th>N° documento</th><th>Nacimiento</th><th>Contacto</th></tr></thead><tbody>
+          ${C.map(c => `<tr>
+            <td><span class="block font-semibold">${EO.esc(c.nombre)}</span><span class="text-[11px] text-eo-muted">Registro: ${String(c.creado || '').slice(0, 10)}</span></td>
+            <td class="whitespace-nowrap">${EO.esc(c.run)}</td><td class="whitespace-nowrap font-mono text-xs">${EO.esc(c.documento)}</td>
+            <td class="whitespace-nowrap">${EO.esc(c.nacimiento)} <span class="text-[11px] text-eo-muted">(${EO.edad(c.nacimiento)} años)</span></td>
+            <td class="text-xs"><span class="block truncate max-w-[180px]">${EO.esc(c.email)}</span>${ok(c.emailVerificado, 'Correo')} · ${ok(c.fonoVerificado, 'Celular')}</td></tr>`).join('')}
+        </tbody></table></div>
+      </section>`;
+    }
+    function render() {
+      if (!EO.can('ver_datos_cliente')) return EO.denied(main, 'ver_datos_cliente');
+      const all = clientes();
+      const L = all.filter(c => (!q || (c.nombre + c.rut + c.contacto + c.email).toLowerCase().includes(q)) && (!fSuc || c.sucursal === fSuc));
+      main.innerHTML = `
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Clientes activos</p><p class="font-display text-3xl font-extrabold mt-2">${all.length}</p></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Con trámite abierto</p><p class="font-display text-3xl font-extrabold mt-2">${all.filter(c => c.tramites.some(t => t.estado !== 'completado')).length}</p></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Domicilios vigentes</p><p class="font-display text-3xl font-extrabold mt-2">${all.filter(c => c.tramites.some(t => t.tramite.startsWith('domicilio'))).length}</p></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Recaudado histórico</p><p class="font-display text-3xl font-extrabold mt-2">${EO.clp(all.reduce((a, c) => a + c.pagado, 0))}</p></div>
+        </div>
+        ${cuentas()}
+        <div class="flex flex-col md:flex-row gap-3 mb-5">
+          <div class="relative flex-1 max-w-md"><span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">${EO.icon('search')}</span><input id="q" class="input !pl-10" placeholder="Buscar por nombre, RUT o correo" value="${EO.esc(q)}"></div>
+          <select id="fSuc" class="input md:!w-48"><option value="">Todas las sucursales</option>${D.sucursales.map(s => `<option value="${s.id}" ${fSuc === s.id ? 'selected' : ''}>${s.comuna}</option>`).join('')}</select>
+          <button id="exp" class="btn-outline md:ml-auto">${EO.icon(EO.can('exportar') ? 'download' : 'lock')} Exportar a Excel</button>
+        </div>
+        <div class="card overflow-x-auto"><table class="table-eo min-w-[820px]"><thead><tr><th>Cliente</th><th>RUT</th><th>Contacto</th><th>Sucursal</th><th>Trámites</th><th>Pagado</th><th></th></tr></thead><tbody>
+          ${L.map(c => `<tr class="cursor-pointer" data-rut="${c.rut}"><td><span class="flex items-center gap-3"><span class="w-9 h-9 rounded-full bg-eo-mint text-eo-green text-xs font-bold grid place-items-center shrink-0">${EO.initials(c.nombre)}</span><span class="font-semibold">${EO.esc(c.nombre)}</span></span></td>
+            <td class="whitespace-nowrap">${c.rut}</td><td class="text-eo-muted">${EO.esc(c.contacto)}<br><span class="text-[11px]">${EO.esc(c.email)}</span></td>
+            <td>${D.sucursales.find(x => x.id === c.sucursal).comuna}</td><td><span class="pill-gray">${c.tramites.length}</span></td><td class="font-semibold">${EO.clp(c.pagado)}</td>
+            <td class="text-right">${EO.icon('chevron-right', 'w-4 h-4 text-slate-400')}</td></tr>`).join('')}
+        </tbody></table></div>`;
+      document.getElementById('q').oninput = e => { q = e.target.value.toLowerCase(); const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); };
+      document.getElementById('fSuc').onchange = e => { fSuc = e.target.value; render(); };
+      document.getElementById('exp').onclick = () => {
+        if (!EO.can('exportar')) { EO.audit('Intento de exportación bloqueado', '—', 'Permiso «exportar» denegado'); return EO.toast('Tu rol no puede exportar la base de clientes. Quedó registrado.', 'shield-x'); }
+        EO_XLSX.descargar(`clientes-easy-office-${new Date().toISOString().slice(0, 10)}.xlsx`, {
+          hoja: 'Clientes', titulo: 'Clientes · Easy Office', subtitulo: `Exportado el ${new Date().toLocaleString('es-CL')} · ${L.length} clientes`,
+          columnas: [{ n: 'Cliente', max: 40 }, { n: 'RUT' }, { n: 'Contacto', max: 32 }, { n: 'Correo', max: 36 }, { n: 'Celular' }, { n: 'Sucursal' }, { n: 'Trámites', tipo: 'numero' }, { n: 'Pagado', tipo: 'clp' }],
+          filas: L.map(c => [c.nombre, c.rut, c.contacto, c.email, c.fono, (D.sucursales.find(x => x.id === c.sucursal) || {}).comuna || c.sucursal, c.tramites.length, c.pagado]),
+        });
+        EO.audit('Exportación de datos', '—', `Clientes (${L.length} registros) · Excel`); EO.toast('Exportación generada y registrada en auditoría.', 'download');
+      };
+      main.querySelectorAll('[data-rut]').forEach(r => r.onclick = () => openCliente(all.find(c => c.rut === r.dataset.rut)));
+      EO.refreshIcons();
+    }
+    function openCliente(c) {
+      EO.audit('Lectura de datos del cliente', '—', c.nombre);
+      drawerBody.innerHTML = `
+        <div class="flex justify-between items-start mb-6"><div class="flex gap-3"><span class="w-12 h-12 rounded-full bg-eo-mint text-eo-green font-bold grid place-items-center">${EO.initials(c.nombre)}</span>
+          <div><p class="font-bold text-lg leading-tight">${EO.esc(c.nombre)}</p><p class="text-sm text-eo-muted">${c.rut}</p></div></div>
+          <button onclick="drawer.classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-slate-100">${EO.icon('x', 'w-5 h-5')}</button></div>
+        <dl class="text-sm space-y-3 rounded-xl bg-eo-bg p-4 mb-6">
+          <div class="flex justify-between gap-3"><dt class="text-eo-muted">Contacto</dt><dd>${EO.esc(c.contacto)}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-eo-muted">Correo</dt><dd class="truncate">${EO.esc(c.email)}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-eo-muted">Teléfono</dt><dd>${EO.esc(c.fono)}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-eo-muted">Sucursal</dt><dd>${D.sucursales.find(x => x.id === c.sucursal).direccion}</dd></div>
+        </dl>
+        <p class="font-semibold mb-3">Trámites</p>
+        <div class="space-y-2">${c.tramites.map(s => `<a href="ticket.html?folio=${s.folio}" class="flex items-center justify-between gap-3 rounded-xl border border-eo-line p-3.5 hover:border-eo-green">
+          <span class="min-w-0"><span class="block text-sm font-semibold truncate">${EO.tramite(s.tramite).titulo}</span><span class="text-[11px] text-eo-muted">${s.folio} · ${s.fecha}</span></span>${EO.estadoPill(s.estado)}</a>`).join('')}</div>
+        <p class="mt-6 text-[11px] text-eo-muted flex gap-1.5">${EO.icon('shield-check', 'w-3.5 h-3.5 text-eo-green shrink-0')} Derechos ARCO: el titular puede solicitar acceso, rectificación, cancelación u oposición (Ley 21.719).</p>`;
+      drawer.classList.remove('hidden'); EO.refreshIcons();
+    }
+    render();
+  </script>
+</body>
+</html>

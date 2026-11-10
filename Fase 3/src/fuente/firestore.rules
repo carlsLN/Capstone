@@ -1,0 +1,75 @@
+rules_version = '2';
+// Reglas de Firestore para Easy Office (páginas originales y páginas nuevas).
+// - Nada se puede borrar desde las páginas (solo desde la consola de Firebase).
+// - La auditoría es solo de inserción: un registro no se puede modificar.
+// - El catálogo lo editan solo cuentas con sesión de Firebase Authentication.
+// - Los datos se validan para que no se guarde basura.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function campos(req) { return request.resource.data.keys().hasAll(req); }
+    function soloCambia(permitidos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(permitidos); }
+
+    match /tramites/{id} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && campos(['titulo', 'categoria', 'costo'])
+        && request.resource.data.titulo is string
+        && request.resource.data.costo is int && request.resource.data.costo >= 0;
+      allow delete: if false;
+    }
+
+    match /solicitudes/{folio} {
+      allow read: if true;
+      allow create: if folio.matches('EO-[0-9]{4}-[0-9]{6}')
+        && request.resource.data.folio == folio
+        && campos(['folio', 'tramite', 'cliente', 'estado', 'pagado'])
+        && request.resource.data.estado == 'ingresado'
+        && request.resource.data.pagado is int && request.resource.data.pagado >= 0;
+      allow update: if request.resource.data.folio == resource.data.folio
+        && request.resource.data.estado in ['ingresado', 'validacion', 'notaria', 'firma', 'completado']
+        && request.resource.data.pagado is int && request.resource.data.pagado >= 0;
+      allow delete: if false;
+    }
+
+    match /usuarios/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.id == id
+        && request.resource.data.rol in ['Administrador', 'Ejecutivo', 'Finanzas', 'Freelance']
+        && request.resource.data.estado in ['Activo', 'Suspendido']
+        && (resource == null || resource.data.rol != 'Administrador' || request.resource.data.rol == 'Administrador');
+      allow delete: if false;
+    }
+
+    // cuentas del portal: cada persona crea solo su propio perfil, con su sesión de Firebase Authentication.
+    // La cuenta queda verificada con el código al correo y al celular (acuerdo del 30-10-2026: sin revisión de un ejecutivo).
+    // OJO: la lectura está abierta porque el CRM de la demo aún no usa sesión de Firebase; cerrarla antes de recibir clientes reales.
+    match /clientes/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && campos(['nombre', 'run', 'documento', 'nacimiento', 'email', 'fono', 'identidad'])
+        && request.resource.data.emailVerificado == true && request.resource.data.fonoVerificado == true
+        && request.resource.data.identidad == 'verificada';
+      allow update, delete: if false;
+    }
+
+    match /config/roles {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['permisos'])
+        && request.resource.data.permisos.Administrador.size() >= 10;
+    }
+
+    match /auditoria/{id} {
+      allow read: if true;
+      allow create: if campos(['ts', 'usuario', 'accion', 'folio'])
+        && request.resource.data.ts is string && request.resource.data.accion is string;
+      allow update, delete: if false;
+    }
+
+    // cualquier otra colección queda cerrada
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

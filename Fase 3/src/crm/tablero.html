@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tablero · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+
+  <script>
+    EO.mountCrm('tablero', 'Tablero de trámites', 'Cada pago confirmado en el portal crea un ticket automáticamente');
+    const D = EO_DATA, main = document.getElementById('main');
+    const freelance = EO.role() === 'Freelance';
+    let view = EO.store.get('eo_view', 'kanban'), q = '', fEj = '', fSuc = '';
+    const total = s => s.total || EO.tramite(s.tramite).precio;
+    const days = d => Math.max(0, Math.round((new Date('2026-10-26') - new Date(d)) / 864e5));
+
+    function list() {
+      return EO.solicitudes().filter(s => (!freelance || s.asignado === EO.crmUser())
+        && (!fEj || (fEj === 'none' ? !s.asignado : s.asignado === fEj)) && (!fSuc || s.sucursal === fSuc)
+        && (!q || (s.folio + s.cliente + EO.tramite(s.tramite).titulo + s.rut).toLowerCase().includes(q)));
+    }
+    const cliente = s => freelance ? EO.mask(s.cliente, 6) : EO.esc(s.cliente);
+    const payPill = s => s.pagado <= 0 ? '<span class="pill-red">Sin pago</span>' : s.pagado < total(s) ? `<span class="pill-amber">Abono ${s.modalidad}%</span>` : '<span class="pill-green">Pagado</span>';
+    const prio = { Alta: 'bg-eo-red', Media: 'bg-orange-400', Baja: 'bg-slate-300' };
+
+    function card(s) {
+      const t = EO.tramite(s.tramite), u = EO.usuario(s.asignado);
+      return `<a href="ticket.html?folio=${s.folio}" draggable="${EO.can('editar_tramites')}" data-folio="${s.folio}" class="kcard block bg-white rounded-xl border border-eo-line p-4 hover:border-eo-border hover:shadow-card transition cursor-grab active:cursor-grabbing">
+        <div class="flex items-center justify-between mb-2"><span class="text-[11px] font-semibold text-eo-muted">${s.folio}</span><span class="w-2 h-2 rounded-full ${prio[s.prioridad]}" title="Prioridad ${s.prioridad}"></span></div>
+        <p class="text-sm font-semibold leading-snug">${t.titulo}</p>
+        <p class="text-xs text-eo-muted mt-1 truncate">${cliente(s)}</p>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-eo-line">
+          ${payPill(s)}
+          <span class="flex items-center gap-2 text-[11px] text-eo-muted">${days(s.fecha)}d
+            ${u ? `<span class="w-6 h-6 rounded-full bg-eo-ink text-white text-[9px] font-bold grid place-items-center" title="${u.nombre}">${u.iniciales}</span>` : '<span class="w-6 h-6 rounded-full border border-dashed border-slate-300 grid place-items-center" title="Sin asignar">' + EO.icon('user-plus', 'w-3 h-3 text-slate-400') + '</span>'}</span>
+        </div></a>`;
+    }
+
+    function render() {
+      const all = EO.solicitudes().filter(s => !freelance || s.asignado === EO.crmUser());
+      const L = list();
+      const kpis = [
+        ['inbox', 'Sin asignar', all.filter(s => !s.asignado).length, 'Nuevos desde el portal'],
+        ['loader', 'En curso', all.filter(s => s.estado !== 'completado').length, 'Trámites abiertos'],
+        ['pen-tool', 'Esperando firma', all.filter(s => s.estado === 'firma').length, 'Pendientes del cliente'],
+        ['wallet', 'Por conciliar', all.filter(s => s.pagado <= 0).length, 'Transferencias manuales'],
+      ];
+      main.innerHTML = `
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">${kpis.map(([ic, n, v, d]) => `
+          <div class="card p-5"><div class="flex items-center justify-between"><p class="text-xs font-semibold text-eo-muted">${n}</p><span class="w-8 h-8 rounded-lg bg-eo-mint text-eo-green grid place-items-center">${EO.icon(ic)}</span></div>
+          <p class="font-display text-3xl font-extrabold mt-2">${v}</p><p class="text-[11px] text-eo-muted">${d}</p></div>`).join('')}</div>
+
+        <div class="flex flex-col md:flex-row md:items-center gap-3 mb-5">
+          <div class="relative flex-1 max-w-md"><span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">${EO.icon('search')}</span>
+            <input id="q" class="input !pl-10" placeholder="Buscar por folio, cliente, RUT o trámite" value="${EO.esc(q)}"></div>
+          ${freelance ? '<span class="pill-amber">Solo ves tus tickets asignados</span>' : `<select id="fEj" class="input md:!w-56"><option value="">Todos los responsables</option><option value="none" ${fEj === 'none' ? 'selected' : ''}>Sin asignar</option>${D.equipo.filter(u => u.rol !== 'Finanzas').map(u => `<option value="${u.id}" ${fEj === u.id ? 'selected' : ''}>${u.nombre}</option>`).join('')}</select>`}
+          <select id="fSuc" class="input md:!w-44"><option value="">Todas las sucursales</option>${D.sucursales.map(s => `<option value="${s.id}" ${fSuc === s.id ? 'selected' : ''}>${s.comuna}</option>`).join('')}</select>
+          <div class="flex rounded-xl bg-white border border-eo-line p-1 md:ml-auto">
+            <button data-v="kanban" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${view === 'kanban' ? 'bg-eo-ink text-white' : 'text-slate-500'}">${EO.icon('columns-3', 'w-3.5 h-3.5')} Kanban</button>
+            <button data-v="lista" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${view === 'lista' ? 'bg-eo-ink text-white' : 'text-slate-500'}">${EO.icon('list', 'w-3.5 h-3.5')} Lista</button>
+          </div>
+        </div>
+
+        ${view === 'kanban' ? `<div class="flex gap-4 overflow-x-auto scroll-thin pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">${D.estados.map(e => {
+          const items = L.filter(s => s.estado === e.id);
+          const dot = { gray: 'bg-slate-400', blue: 'bg-eo-blue', amber: 'bg-orange-400', green: 'bg-eo-green' }[e.color];
+          return `<section class="kanban-col flex-1 min-w-[200px] rounded-2xl bg-white/60 border border-eo-line p-3" data-col="${e.id}">
+            <header class="flex items-center justify-between px-1.5 mb-3"><p class="flex items-center gap-2 text-sm font-semibold"><span class="w-2 h-2 rounded-full ${dot}"></span>${e.nombre}</p><span class="pill-gray">${items.length}</span></header>
+            <div class="space-y-3 min-h-[120px]">${items.map(card).join('') || '<p class="text-xs text-center text-slate-400 py-8">Sin trámites</p>'}</div></section>`;
+        }).join('')}</div>
+        <p class="text-[11px] text-eo-muted mt-1 flex items-center gap-1.5">${EO.icon('info', 'w-3.5 h-3.5')} ${EO.can('editar_tramites') ? 'Arrastra una tarjeta para cambiar su estado. El cliente recibe un aviso y el cambio queda en la auditoría.' : 'Tu rol puede ver el tablero, pero no cambiar estados.'}</p>`
+        : `<div class="card overflow-x-auto"><table class="table-eo min-w-[860px]"><thead><tr><th>Folio</th><th>Trámite</th><th>Cliente</th><th>Sucursal</th><th>Pago</th><th>Estado</th><th>Responsable</th><th>Antigüedad</th></tr></thead><tbody>
+          ${L.map(s => { const u = EO.usuario(s.asignado); return `<tr class="cursor-pointer" onclick="location.href='ticket.html?folio=${s.folio}'"><td class="font-semibold">${s.folio}</td><td>${EO.tramite(s.tramite).titulo}</td><td class="text-eo-muted">${cliente(s)}</td><td>${D.sucursales.find(x => x.id === s.sucursal).comuna}</td><td>${payPill(s)}</td><td>${EO.estadoPill(s.estado)}</td><td>${u ? u.nombre : '<span class="text-slate-400">Sin asignar</span>'}</td><td class="text-eo-muted">${days(s.fecha)} días</td></tr>`; }).join('')}
+          </tbody></table></div>`}`;
+
+      document.getElementById('q').oninput = e => { q = e.target.value.toLowerCase(); const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); };
+      document.getElementById('fEj') && (document.getElementById('fEj').onchange = e => { fEj = e.target.value; render(); });
+      document.getElementById('fSuc').onchange = e => { fSuc = e.target.value; render(); };
+      main.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { view = b.dataset.v; EO.store.set('eo_view', view); render(); });
+      bindDrag();
+      EO.refreshIcons();
+    }
+
+    function bindDrag() {
+      if (!EO.can('editar_tramites')) return;
+      main.querySelectorAll('.kcard').forEach(c => c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', c.dataset.folio); c.classList.add('opacity-50'); }));
+      main.querySelectorAll('.kanban-col').forEach(col => {
+        col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
+        col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+        col.addEventListener('drop', e => {
+          e.preventDefault(); col.classList.remove('drag-over');
+          const folio = e.dataTransfer.getData('text/plain'), s = EO.solicitud(folio), to = col.dataset.col;
+          if (!s || s.estado === to) return;
+          EO.updateSolicitud(folio, { estado: to });
+          EO.audit('Cambio de estado', folio, `${EO.estado(s.estado).nombre} → ${EO.estado(to).nombre}`);
+          EO.toast(`${folio} movido a «${EO.estado(to).nombre}». Cliente notificado.`);
+          render();
+        });
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Easy Office · Portal de trámites</title>
+  <meta name="description" content="Crea, formaliza y gestiona tu empresa en línea: domicilio tributario, constitución, documentos con firma electrónica y contabilidad.">
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-white">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="header"></div>
+
+  <!-- HERO -->
+  <section class="bg-eo-ink text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-[.07]" style="background-image: radial-gradient(circle at 1px 1px, #fff 1px, transparent 0); background-size: 28px 28px;"></div>
+    <div class="container-eo relative py-20 lg:py-28 grid lg:grid-cols-[1.25fr_1fr] gap-14 items-center">
+      <div class="fade-in">
+        <span class="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-xs text-slate-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-eo-bright"></span> Más de 15 años impulsando a quienes emprenden
+        </span>
+        <h1 class="mt-6 text-4xl sm:text-5xl lg:text-[56px] font-semibold leading-[1.08] tracking-tight">
+          Hemos creado y activado más de <span class="text-eo-bright"><span id="counter">0</span>+ empresas</span>
+        </h1>
+        <p class="mt-6 text-lg text-slate-300 max-w-xl leading-relaxed">Elige tu trámite, crea tu cuenta verificada, paga con tarjeta o transferencia y firma electrónicamente. Tú te enfocas en crecer; nosotros despejamos el camino.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="catalogo.html" class="btn-primary">Explorar trámites <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+          <a href="#contacto" class="btn border border-white/25 text-white hover:bg-white/5">Reunámonos 30 minutos</a>
+        </div>
+        <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
+          <li class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-eo-bright"></i> 5.000+ empresas activadas</li>
+          <li class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-eo-bright"></i> 3 sucursales</li>
+          <li class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-eo-bright"></i> 100% digital</li>
+        </ul>
+      </div>
+
+      <!-- Seguimiento rápido -->
+      <div class="fade-in rounded-3xl bg-eo-ink2 border border-white/10 p-6 sm:p-8 shadow-2xl">
+        <div class="flex items-center gap-4 mb-6">
+          <span class="rounded-2xl bg-eo-ink p-4 border border-white/10" id="heroLogo"></span>
+          <div><p class="font-display text-xl font-semibold">Sigue tu trámite</p><p class="text-sm text-slate-400">Ingresa tu folio para ver en qué etapa va.</p></div>
+        </div>
+        <form id="trackForm" class="space-y-3">
+          <label class="text-xs text-slate-400" for="folio">Folio de la solicitud</label>
+          <input id="folio" class="w-full rounded-xl bg-eo-ink border border-white/15 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-eo-bright" placeholder="EO-2026-000482">
+          <button class="btn-primary w-full">Consultar estado</button>
+        </form>
+        <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+          <div class="rounded-xl bg-white/5 p-3"><p class="font-display text-eo-bright text-xl font-bold">24h</p><p class="text-[11px] text-slate-400">respuesta inicial</p></div>
+          <div class="rounded-xl bg-white/5 p-3"><p class="font-display text-eo-bright text-xl font-bold">FEA</p><p class="text-[11px] text-slate-400">Ley 19.799</p></div>
+          <div class="rounded-xl bg-white/5 p-3"><p class="font-display text-eo-bright text-xl font-bold">50%</p><p class="text-[11px] text-slate-400">abono inicial</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PASOS -->
+  <section class="py-20">
+    <div class="container-eo">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="eyebrow">Simple desde el primer día</span>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">Cuatro pasos para poner tu empresa en movimiento</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="rounded-2xl bg-eo-bg p-6"><div class="flex justify-between text-eo-green mb-6"><i data-lucide="search" class="w-6 h-6"></i><span class="text-xs font-bold">01</span></div><h3 class="font-semibold mb-2">Elige tu trámite</h3><p class="text-sm text-eo-muted">Revisa requisitos, plazos y precio antes de empezar.</p></div>
+        <div class="rounded-2xl bg-eo-bg p-6"><div class="flex justify-between text-eo-green mb-6"><i data-lucide="id-card" class="w-6 h-6"></i><span class="text-xs font-bold">02</span></div><h3 class="font-semibold mb-2">Crea tu cuenta</h3><p class="text-sm text-eo-muted">Regístrate con tu cédula y completa tus datos una sola vez.</p></div>
+        <div class="rounded-2xl bg-eo-bg p-6"><div class="flex justify-between text-eo-green mb-6"><i data-lucide="landmark" class="w-6 h-6"></i><span class="text-xs font-bold">03</span></div><h3 class="font-semibold mb-2">Paga 50% o 100%</h3><p class="text-sm text-eo-muted">Con tarjeta de débito o crédito, o por transferencia con 2% de descuento.</p></div>
+        <div class="rounded-2xl bg-eo-bg p-6"><div class="flex justify-between text-eo-green mb-6"><i data-lucide="pen-tool" class="w-6 h-6"></i><span class="text-xs font-bold">04</span></div><h3 class="font-semibold mb-2">Firma y sigue el avance</h3><p class="text-sm text-eo-muted">Firma electrónica avanzada y estado en tiempo real.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOLUCIONES -->
+  <section class="py-20 bg-eo-bg">
+    <div class="container-eo">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="eyebrow">Todo para avanzar</span>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">Soluciones que le hacen espacio a tu negocio</h2>
+        <p class="mt-4 text-eo-muted">Servicios esenciales para crear, ordenar y hacer crecer tu empresa, con un equipo que habla simple.</p>
+      </div>
+      <div id="catGrid" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+    </div>
+  </section>
+
+  <!-- MÁS SOLICITADOS -->
+  <section class="py-20">
+    <div class="container-eo">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+        <div><span class="eyebrow">Trámites frecuentes</span><h2 class="mt-3 text-3xl font-semibold tracking-tight">Los más solicitados esta semana</h2></div>
+        <a href="catalogo.html" class="btn-outline btn-sm">Ver catálogo completo <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      </div>
+      <div id="popGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </div>
+  </section>
+
+  <!-- RESPALDO -->
+  <section class="py-20 bg-eo-bg">
+    <div class="container-eo grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <span class="eyebrow">Tu equipo detrás del negocio</span>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">Emprender ya es desafiante. La parte administrativa no tiene por qué serlo.</h2>
+        <p class="mt-5 text-eo-muted leading-relaxed">Hace más de 15 años acompañamos a emprendedores y Pymes en Chile. Nuestra misión es convertir trámites complejos en decisiones simples, combinando tecnología, cercanía y experiencia tributaria.</p>
+        <ul class="mt-6 space-y-3 text-sm">
+          <li class="flex gap-3"><i data-lucide="shield-check" class="w-5 h-5 text-eo-green shrink-0"></i> Datos cifrados y acceso por roles: solo quien gestiona tu trámite ve tu información.</li>
+          <li class="flex gap-3"><i data-lucide="file-check-2" class="w-5 h-5 text-eo-green shrink-0"></i> Contratos con firma electrónica avanzada válida bajo la Ley 19.799.</li>
+          <li class="flex gap-3"><i data-lucide="bell-ring" class="w-5 h-5 text-eo-green shrink-0"></i> Te avisamos por correo y WhatsApp cada vez que tu trámite avanza.</li>
+        </ul>
+      </div>
+      <div class="rounded-3xl bg-eo-ink p-8 text-white">
+        <p class="font-display text-xl font-semibold mb-6">Respaldo que se puede medir</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-2xl bg-eo-ink2 border border-white/5 p-5"><p class="font-display text-3xl text-eo-bright">5.000+</p><p class="text-xs text-slate-400 mt-1">emprendimientos</p></div>
+          <div class="rounded-2xl bg-eo-ink2 border border-white/5 p-5"><p class="font-display text-3xl text-eo-bright">15+</p><p class="text-xs text-slate-400 mt-1">años de trayectoria</p></div>
+          <div class="rounded-2xl bg-eo-ink2 border border-white/5 p-5"><p class="font-display text-3xl text-eo-bright">3</p><p class="text-xs text-slate-400 mt-1">sucursales RM y V Región</p></div>
+          <div class="rounded-2xl bg-eo-ink2 border border-white/5 p-5"><p class="font-display text-3xl text-eo-bright">100%</p><p class="text-xs text-slate-400 mt-1">gestión digital</p></div>
+        </div>
+        <div class="mt-6 pt-5 border-t border-white/10 flex justify-between text-sm"><span class="text-slate-400">Horario de atención</span><span>Lun–Jue 08:30–17:30 · Vie 08:30–14:30</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-20">
+    <div class="container-eo max-w-3xl">
+      <div class="text-center mb-10"><span class="eyebrow">Preguntas frecuentes</span><h2 class="mt-3 text-3xl font-semibold tracking-tight">Resolvemos tus dudas antes de empezar</h2></div>
+      <div class="space-y-3" id="faqList"></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="contacto" class="pb-20">
+    <div class="container-eo">
+      <div class="rounded-3xl bg-eo-green p-8 sm:p-12 text-white grid md:grid-cols-[1.4fr_1fr] gap-8 items-center">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[.14em] text-white/80">Hablemos de tu próximo paso</p>
+          <h2 class="mt-2 text-3xl sm:text-4xl font-semibold">30 minutos pueden destrabar mucho.</h2>
+          <p class="mt-3 text-white/85">Cuéntanos dónde estás y te orientamos con claridad, sin compromiso.</p>
+        </div>
+        <form id="contactForm" class="bg-white rounded-2xl p-5 space-y-3 text-eo-ink">
+          <input class="input" placeholder="Nombre" required>
+          <input class="input" type="email" placeholder="Correo electrónico" required>
+          <select class="input"><option>¿Qué necesitas?</option><option>Domicilio tributario</option><option>Crear una empresa</option><option>Un contrato o documento</option><option>Contabilidad</option></select>
+          <button class="btn-dark w-full">Agendar una reunión <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <div id="footer"></div>
+
+  <script>
+    EO.mountPortal('inicio');
+    document.getElementById('heroLogo').innerHTML = EO.logo({ size: 'lg', dark: true });
+
+    const D = EO_DATA;
+    document.getElementById('catGrid').innerHTML = D.categorias.map(c => {
+      const n = D.tramites.filter(t => t.categoria === c.id).length;
+      return `<a href="catalogo.html?cat=${c.id}" class="card p-6 group hover:shadow-lift hover:-translate-y-0.5 transition block">
+        <span class="w-11 h-11 rounded-xl bg-eo-mint text-eo-green grid place-items-center mb-5">${EO.icon(c.icono, 'w-5 h-5')}</span>
+        <h3 class="font-semibold text-lg mb-2">${c.nombre}</h3>
+        <p class="text-sm text-eo-muted leading-relaxed mb-5">${c.desc}</p>
+        <span class="text-sm font-semibold text-eo-green inline-flex items-center gap-1">${n} trámites ${EO.icon('arrow-right', 'w-4 h-4 group-hover:translate-x-1 transition')}</span>
+      </a>`;
+    }).join('');
+    document.getElementById('popGrid').innerHTML = D.tramites.filter(t => t.popular).slice(0, 3).map(EO.tramiteCard).join('');
+
+    const faqs = [
+      ['¿Necesito ir a una oficina?', 'No. Todo el proceso es en línea: eliges el trámite, creas tu cuenta, pagas con tarjeta o transferencia y firmas electrónicamente. Si lo prefieres, también puedes visitarnos en cualquiera de nuestras sucursales.'],
+      ['¿Puedo pagar en dos partes?', 'Sí. En la mayoría de los trámites puedes abonar el 50% para comenzar y pagar el saldo antes de la entrega. También puedes pagar el 100% de una vez.'],
+      ['¿Es válida la firma electrónica?', 'Sí. Usamos Firma Electrónica Avanzada, que tiene la misma validez que la firma manuscrita según la Ley 19.799.'],
+      ['¿Cómo sé en qué va mi trámite?', 'Desde "Mis trámites" ves cada etapa en tiempo real y te avisamos por correo o WhatsApp ante cualquier cambio o si necesitamos que corrijas un documento.'],
+      ['¿Qué pasa con mis datos?', 'Tus datos viajan cifrados y solo los ve el ejecutivo asignado a tu trámite. Cada acceso queda registrado, en línea con la Ley 21.719 de protección de datos personales.'],
+    ];
+    document.getElementById('faqList').innerHTML = faqs.map(([q, a]) => `
+      <details class="group card !shadow-none open:!shadow-card">
+        <summary class="flex items-center justify-between cursor-pointer list-none p-5 font-semibold">${q}${EO.icon('chevron-down', 'w-5 h-5 text-eo-green transition group-open:rotate-180')}</summary>
+        <p class="px-5 pb-5 -mt-1 text-sm text-eo-muted leading-relaxed">${a}</p>
+      </details>`).join('');
+
+    document.getElementById('trackForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = document.getElementById('folio').value.trim().toUpperCase() || 'EO-2026-000482';
+      if (EO.solicitud(f)) location.href = 'estado.html?folio=' + encodeURIComponent(f);
+      else EO.toast('No encontramos ese folio. Revisa el formato EO-2026-000000.', 'alert-circle');
+    });
+    document.getElementById('contactForm').addEventListener('submit', e => { e.preventDefault(); e.target.reset(); EO.toast('¡Listo! Un ejecutivo te contactará hoy mismo.'); });
+
+    // contador animado
+    const el = document.getElementById('counter'); const goal = 5000; const t0 = performance.now();
+    (function tick(t) { const p = Math.min(1, (t - t0) / 1400); el.textContent = Math.round(goal * (1 - Math.pow(1 - p, 3))).toLocaleString('es-CL'); if (p < 1) requestAnimationFrame(tick); })(t0);
+    EO.refreshIcons();
+  </script>
+</body>
+</html>

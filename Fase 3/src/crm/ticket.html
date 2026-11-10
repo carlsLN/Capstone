@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ficha del trámite · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+  <script src="../assets/forms.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+
+  <!-- Modal subsanación -->
+  <div id="subModal" class="hidden fixed inset-0 z-50 bg-eo-ink/60 backdrop-blur-sm grid place-items-center p-4">
+    <form id="subForm" class="bg-white rounded-2xl w-full max-w-md p-6 fade-in">
+      <p class="font-semibold text-lg">Solicitar subsanación</p>
+      <p class="text-sm text-eo-muted mb-4" id="subDoc"></p>
+      <label class="label">Motivo</label>
+      <select id="subMot" class="input mb-3"><option>Documento ilegible</option><option>Documento vencido</option><option>Falta el reverso</option><option>No corresponde al requisito</option></select>
+      <label class="label">Mensaje al cliente</label>
+      <textarea id="subMsg" class="input min-h-[90px]">Hola, necesitamos que vuelvas a subir este documento para continuar con tu trámite.</textarea>
+      <div class="flex gap-2 mt-3 text-xs"><label class="flex items-center gap-1.5"><input type="checkbox" checked class="accent-eo-green"> Correo</label><label class="flex items-center gap-1.5"><input type="checkbox" checked class="accent-eo-green"> WhatsApp</label></div>
+      <div class="flex justify-end gap-2 mt-6"><button type="button" onclick="subModal.classList.add('hidden')" class="btn-outline btn-sm">Cancelar</button><button class="btn-primary btn-sm">Enviar solicitud</button></div>
+    </form>
+  </div>
+
+  <script>
+    const folio = EO.param('folio') || 'EO-2026-000482';
+    EO.mountCrm('tablero', folio, 'Ficha del trámite');
+    const D = EO_DATA, main = document.getElementById('main');
+    const freelance = EO.role() === 'Freelance';
+    let tab = 'resumen', subIdx = null;
+    let s0 = EO.solicitud(folio);
+    if (s0) EO.audit('Lectura de datos del cliente', folio, freelance ? 'Vista ficha (datos enmascarados)' : 'Vista ficha completa');
+
+    function render() {
+      const s = EO.solicitud(folio);
+      if (!s) { main.innerHTML = '<div class="card p-10 text-center">Trámite no encontrado.</div>'; return; }
+      if (freelance && s.asignado !== EO.crmUser()) return EO.denied(main, 'ver_datos_cliente');
+      const t = EO.tramite(s.tramite), total = s.total || t.precio, saldo = total - s.pagado;
+      const full = EO.can('ver_datos_cliente');
+      const v = (x) => full ? EO.esc(x) : `<span class="text-slate-400">${EO.mask(x)}</span>`;
+      const notas = (s.notas || EO.store.get('eo_notes_' + folio, null) || [{ u: 'u2', ts: '2026-10-24 10:12', txt: 'Cliente pidió priorizar. Estatutos revisados, todo OK.' }]).map(n => Array.isArray(n) ? n : [n.u, n.ts, n.txt]);
+      const docs = (s.docs && s.docs.length ? s.docs : t.documentos.map((d, i) => ({ nombre: d[0], archivo: i === 0 ? 'Documento_' + (i + 1) + '.pdf' : null, st: i === 0 ? 'cargado' : 'despues' })));
+      const logs = [...EO.store.get('eo_audit', []), ...D.auditoria].filter(r => r[3] === folio).sort((a, b) => b[0].localeCompare(a[0]));
+      const datos = Object.assign({ razon: s.cliente, rut: s.rut, rep: s.contacto, run: s.run, email: s.email, fono: s.fono, sucursal: s.sucursal, duracion: '12 meses' }, s.datos || {});
+
+      const tabs = [['resumen', 'Resumen', 'user-round'], ['docs', 'Documentos', 'files'], ['borrador', 'Borrador', 'file-text'], ['pagos', 'Pagos', 'wallet'], ['historial', 'Historial', 'history']];
+      const body = {
+        resumen: `<div class="grid md:grid-cols-2 gap-5">
+          <section class="card p-5"><h3 class="font-semibold mb-4 flex items-center justify-between">Cliente ${!full ? '<span class="pill-amber !text-[10px]">' + EO.icon('eye-off', 'w-3 h-3') + ' Datos enmascarados por tu rol</span>' : ''}</h3>
+            <dl class="text-sm space-y-3">
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Razón social</dt><dd class="text-right font-medium">${v(s.cliente)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">RUT</dt><dd>${v(s.rut)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Contacto</dt><dd class="text-right">${v(s.contacto)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">RUN</dt><dd>${v(s.run)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Correo</dt><dd class="text-right truncate">${v(s.email)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Teléfono</dt><dd>${v(s.fono)}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Cuenta</dt><dd class="flex items-center gap-2">${EO.cuentaDe(s.titularRun || s.run) || s.propio ? `<span class="pill-green">${EO.icon('badge-check', 'w-3 h-3')} Correo y celular verificados</span>` : '<span class="text-eo-muted text-xs">Ingresado por el equipo</span>'}</dd></div>
+            </dl></section>
+          <section class="card p-5"><h3 class="font-semibold mb-4">Trámite</h3>
+            <dl class="text-sm space-y-3">
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Servicio</dt><dd class="text-right font-medium">${t.titulo}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Sucursal</dt><dd>${D.sucursales.find(x => x.id === s.sucursal).comuna}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Ingreso</dt><dd>${s.fecha} · portal</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Plazo comprometido</dt><dd>${t.plazo}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Firma</dt><dd>${!t.firma ? 'No requiere' : s.firmado || s.estado === 'completado' ? '<span class="pill-green">Firmado</span>' : '<span class="pill-amber">Pendiente</span>'}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-eo-muted">Pago</dt><dd>${EO.clp(s.pagado)} de ${EO.clp(total)}</dd></div>
+            </dl></section>
+          <section class="card p-5 md:col-span-2"><h3 class="font-semibold mb-4">Notas internas</h3>
+            <div class="space-y-3 mb-4">${notas.map(([u, ts, n]) => { const us = EO.usuario(u); return `<div class="flex gap-3"><span class="w-8 h-8 rounded-full bg-eo-ink text-white text-[10px] font-bold grid place-items-center shrink-0">${us.iniciales}</span><div class="rounded-xl bg-eo-bg px-4 py-3 text-sm flex-1"><p class="text-[11px] text-eo-muted mb-1"><b class="text-eo-ink">${us.nombre}</b> · ${ts}</p>${EO.esc(n)}</div></div>`; }).join('')}</div>
+            <form id="noteForm" class="flex gap-2"><input id="noteIn" class="input" placeholder="Escribe una nota visible solo para el equipo…"><button class="btn-dark btn-sm shrink-0">Agregar</button></form></section>
+        </div>`,
+        docs: `<section class="card divide-y divide-eo-line">${docs.map((d, i) => `
+          <div class="p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div class="flex gap-3 min-w-0"><span class="w-10 h-10 rounded-xl bg-eo-mint text-eo-green grid place-items-center shrink-0">${EO.icon('file-text', 'w-5 h-5')}</span>
+              <div class="min-w-0"><p class="font-semibold text-sm">${d.nombre}</p><p class="text-xs text-eo-muted truncate">${d.archivo ? EO.esc(d.archivo) : 'El cliente lo subirá más tarde'}</p></div></div>
+            <div class="flex flex-wrap items-center gap-2">
+              ${{ cargado: '<span class="pill-blue">Por revisar</span>', aprobado: '<span class="pill-green">Aprobado</span>', despues: '<span class="pill-gray">Pendiente del cliente</span>', subsanar: '<span class="pill-red">Subsanación solicitada</span>' }[d.st] || '<span class="pill-gray">Pendiente</span>'}
+              ${d.archivo ? `<button data-dl="${i}" class="btn-outline btn-sm" ${EO.can('descargar_docs') ? '' : 'disabled title="Tu rol no puede descargar documentos"'}>${EO.icon(EO.can('descargar_docs') ? 'download' : 'lock', 'w-3.5 h-3.5')} Descargar</button>` : ''}
+              ${d.archivo && d.st === 'cargado' && EO.can('editar_tramites') ? `<button data-ok="${i}" class="btn-primary btn-sm">${EO.icon('check', 'w-3.5 h-3.5')} Aprobar</button><button data-sub="${i}" class="btn btn-sm bg-red-50 text-eo-red hover:bg-red-100">Subsanar</button>` : ''}
+            </div>
+          </div>`).join('')}</section>`,
+        borrador: `<section class="card overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-eo-line bg-eo-mint2 flex flex-wrap gap-3 items-center justify-between">
+            <p class="text-sm font-semibold flex items-center gap-2">${EO.icon('file-text', 'w-4 h-4 text-eo-green')} Borrador generado automáticamente</p>
+            <div class="flex gap-2"><button id="dlDraft" class="btn-outline btn-sm">${EO.icon('download', 'w-3.5 h-3.5')} PDF</button>
+            ${t.firma && !s.firmado && s.estado !== 'firma' && s.estado !== 'completado' && EO.can('editar_tramites') ? `<button id="toSign" class="btn-primary btn-sm">${EO.icon('send', 'w-3.5 h-3.5')} Enviar a firma FEA</button>` : s.estado === 'firma' ? '<span class="pill-amber">Enviado a firma</span>' : ''}</div></div>
+          <div class="doc-preview p-6 sm:p-10 text-[13px] leading-relaxed text-slate-700 space-y-3 max-w-3xl">${EO_FORMS.render(t.form, datos, t)}</div></section>`,
+        pagos: `<section class="card overflow-x-auto"><table class="table-eo min-w-[640px]"><thead><tr><th>Concepto</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Conciliación</th></tr></thead><tbody>
+          ${s.pagado > 0 ? `<tr><td>${s.modalidad === 50 ? 'Abono 50%' : 'Pago total'}</td><td class="font-semibold">${EO.clp(s.pagado)}</td><td>${s.metodo}</td><td class="font-mono text-xs">${s.metodo === 'Transferencia' ? 'BE-' + folio.slice(-6) : 'TBK-01ab' + folio.slice(-4) + 'f93'}</td><td>${s.metodo === 'Transferencia' ? '<span class="pill-blue">Manual · Finanzas</span>' : '<span class="pill-green">Automática</span>'}</td></tr>` : ''}
+          ${saldo > 0 ? `<tr><td>${s.pagado > 0 ? 'Saldo 50%' : 'Pago pendiente'}</td><td class="font-semibold">${EO.clp(saldo)}</td><td>—</td><td>—</td><td><span class="pill-amber">Pendiente</span></td></tr>` : ''}
+          </tbody></table>
+          <div class="p-5 flex flex-wrap gap-3 justify-between items-center border-t border-eo-line">
+            <p class="text-sm"><span class="text-eo-muted">Total del trámite:</span> <b>${EO.clp(total)}</b> · <span class="text-eo-muted">Saldo:</span> <b class="${saldo > 0 ? 'text-eo-amber' : 'text-eo-green'}">${EO.clp(Math.max(0, saldo))}</b></p>
+            ${saldo > 0 ? `<button id="remind" class="btn-outline btn-sm">${EO.icon('bell', 'w-3.5 h-3.5')} Recordar pago al cliente</button>` : ''}</div></section>`,
+        historial: `<section class="card p-5"><ol class="space-y-4">${logs.map(r => { const u = EO.usuario(r[1]); return `<li class="flex gap-3 text-sm"><span class="w-8 h-8 rounded-full ${u ? 'bg-eo-ink text-white' : 'bg-eo-mint text-eo-green'} text-[10px] font-bold grid place-items-center shrink-0">${u ? u.iniciales : EO.icon('cpu', 'w-4 h-4')}</span>
+          <div><p><b>${r[2]}</b> · ${EO.esc(r[4])}</p><p class="text-[11px] text-eo-muted">${u ? u.nombre : 'Sistema'} · ${r[0]} · IP ${r[5]}</p></div></li>`; }).join('') || '<p class="text-sm text-eo-muted">Sin eventos.</p>'}</ol></section>`,
+      };
+
+      main.innerHTML = `
+        <a href="tablero.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-eo-muted hover:text-eo-green mb-4">${EO.icon('arrow-left', 'w-3.5 h-3.5')} Volver al tablero</a>
+        <div class="card p-5 sm:p-6 mb-6 flex flex-col xl:flex-row xl:items-center gap-5 justify-between">
+          <div class="min-w-0"><div class="flex flex-wrap items-center gap-2 mb-1.5">${EO.estadoPill(s.estado)}<span class="pill-gray">Prioridad ${s.prioridad}</span>${saldo > 0 ? '<span class="pill-amber">Saldo ' + EO.clp(saldo) + '</span>' : '<span class="pill-green">Pagado</span>'}</div>
+            <h2 class="text-xl font-bold">${t.titulo}</h2><p class="text-sm text-eo-muted">${s.folio} · ${full ? EO.esc(s.cliente) : EO.mask(s.cliente, 6)}</p></div>
+          <div class="grid sm:grid-cols-3 gap-3 xl:w-[560px] shrink-0">
+            <label class="text-[11px] font-semibold text-eo-muted">Estado<select id="selEstado" class="input mt-1" ${EO.can('editar_tramites') ? '' : 'disabled'}>${D.estados.map(e => `<option value="${e.id}" ${e.id === s.estado ? 'selected' : ''}>${e.nombre}</option>`).join('')}</select></label>
+            <label class="text-[11px] font-semibold text-eo-muted">Responsable<select id="selAsig" class="input mt-1" ${EO.role() === 'Administrador' || EO.role() === 'Ejecutivo' ? '' : 'disabled'}><option value="">Sin asignar</option>${D.equipo.filter(u => u.rol !== 'Finanzas' && u.estado === 'Activo').map(u => `<option value="${u.id}" ${u.id === s.asignado ? 'selected' : ''}>${u.nombre} · ${u.rol}</option>`).join('')}</select></label>
+            <label class="text-[11px] font-semibold text-eo-muted">Prioridad<select id="selPrio" class="input mt-1" ${EO.can('editar_tramites') ? '' : 'disabled'}>${['Alta', 'Media', 'Baja'].map(p => `<option ${p === s.prioridad ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+          </div>
+        </div>
+        <div class="flex gap-1 overflow-x-auto scroll-thin border-b border-eo-line mb-6">${tabs.map(([k, n, ic]) => `<button data-tab="${k}" class="shrink-0 flex items-center gap-2 px-4 pb-3 -mb-px border-b-2 text-sm font-semibold ${tab === k ? 'border-eo-green text-eo-green' : 'border-transparent text-slate-500 hover:text-eo-ink'}">${EO.icon(ic)} ${n}</button>`).join('')}</div>
+        <div class="fade-in">${body[tab]}</div>`;
+
+      main.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+      const ch = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = () => fn(el.value); };
+      ch('selEstado', val => { EO.updateSolicitud(folio, { estado: val }); EO.audit('Cambio de estado', folio, `${EO.estado(s.estado).nombre} → ${EO.estado(val).nombre}`); EO.toast('Estado actualizado. Cliente notificado por correo.'); render(); });
+      ch('selAsig', val => { EO.updateSolicitud(folio, { asignado: val || null }); EO.audit('Asignación de ticket', folio, val ? 'Asignado a ' + EO.usuario(val).nombre : 'Sin asignar'); EO.toast(val ? 'Ticket asignado a ' + EO.usuario(val).nombre + '.' : 'Ticket sin responsable.'); render(); });
+      ch('selPrio', val => { EO.updateSolicitud(folio, { prioridad: val }); EO.audit('Cambio de prioridad', folio, 'Prioridad ' + val); render(); });
+      const nf = document.getElementById('noteForm');
+      if (nf) nf.onsubmit = e => { e.preventDefault(); const txt = noteIn.value.trim(); if (!txt) return; const d = new Date(); notas.push([EO.crmUser(), d.toISOString().slice(0, 16).replace('T', ' '), txt]); EO.updateSolicitud(folio, { notas: notas.map(([u, ts, txt]) => ({ u, ts, txt })) }); render(); };
+      main.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { const d = docs[+b.dataset.dl]; EO.audit('Descarga de documento', folio, d.archivo); EO.toast('Descargando ' + d.archivo + ' (registrado en auditoría).', 'download'); });
+      main.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => { const arr = docs.slice(); arr[+b.dataset.ok] = Object.assign({}, arr[+b.dataset.ok], { st: 'aprobado' }); EO.updateSolicitud(folio, { docs: arr }); EO.audit('Documento aprobado', folio, arr[+b.dataset.ok].nombre); render(); });
+      main.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { subIdx = +b.dataset.sub; subDoc.textContent = docs[subIdx].nombre; subModal.classList.remove('hidden'); });
+      document.getElementById('subForm').onsubmit = e => { e.preventDefault(); const arr = docs.slice(); arr[subIdx] = Object.assign({}, arr[subIdx], { st: 'subsanar' }); EO.updateSolicitud(folio, { docs: arr }); EO.audit('Solicitud de subsanación', folio, arr[subIdx].nombre + ': ' + subMot.value); subModal.classList.add('hidden'); EO.toast('Solicitud enviada por correo y WhatsApp.'); render(); };
+      document.getElementById('toSign')?.addEventListener('click', () => { EO.updateSolicitud(folio, { estado: 'firma' }); EO.audit('Envío a firma FEA', folio, 'Documento enviado al proveedor de firma'); EO.toast('Documento enviado a firma. El cliente fue notificado.'); render(); });
+      document.getElementById('dlDraft')?.addEventListener('click', () => { EO.audit('Descarga de documento', folio, 'Borrador PDF'); EO.toast('Descargando borrador PDF…', 'download'); });
+      document.getElementById('remind')?.addEventListener('click', () => { EO.audit('Recordatorio de pago', folio, 'Enviado por correo y WhatsApp'); EO.toast('Recordatorio de pago enviado.', 'bell'); });
+      EO.refreshIcons();
+    }
+    render();
+  </script>
+</body>
+</html>

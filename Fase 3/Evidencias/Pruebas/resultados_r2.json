@@ -1,0 +1,155 @@
+[
+  {
+    "id": "CP-01",
+    "nombre": "El catálogo carga los trámites desde Firestore",
+    "ms": 3710,
+    "ok": true,
+    "obtenido": "14 tarjetas de trámite.",
+    "shot": "shots/r2_CP-01.png"
+  },
+  {
+    "id": "CP-02",
+    "nombre": "El detalle del trámite muestra precio, requisitos y botones 50%/100%",
+    "ms": 2604,
+    "ok": true,
+    "obtenido": "Precio $15.000 y opciones de pago 50%/100% visibles.",
+    "shot": "shots/r2_CP-02.png"
+  },
+  {
+    "id": "CP-03",
+    "nombre": "El registro rechaza un RUN con dígito verificador incorrecto",
+    "ms": 2160,
+    "ok": true,
+    "obtenido": "Muestra «RUN inválido: revisa el dígito verificador» y no avanza.",
+    "shot": "shots/r2_CP-03.png"
+  },
+  {
+    "id": "CP-04",
+    "nombre": "El registro rechaza a menores de 18 años",
+    "ms": 582,
+    "ok": true,
+    "obtenido": "Muestra «Debes ser mayor de 18 años» y no avanza.",
+    "shot": "shots/r2_CP-04.png"
+  },
+  {
+    "id": "CP-05",
+    "nombre": "El registro exige verificar correo y celular con código",
+    "ms": 3471,
+    "ok": true,
+    "obtenido": "Sin los códigos no crea la cuenta: «Verifica tu correo con el código».",
+    "shot": "shots/r2_CP-05.png"
+  },
+  {
+    "id": "CP-06",
+    "nombre": "El inicio de sesión avisa los intentos restantes y bloquea al quinto error",
+    "ms": 24140,
+    "ok": true,
+    "obtenido": "1er error: «Correo o contraseña incorrectos. Te quedan 4 intentos.» · 5º error: «Bloqueamos el ingreso con este correo por 5 intentos fallidos. Podrás intentarlo de nuevo …»",
+    "shot": "shots/r2_CP-06.png"
+  },
+  {
+    "id": "CP-07",
+    "nombre": "Inicio de sesión del cliente con contraseña + código de 6 dígitos",
+    "ms": 10316,
+    "ok": true,
+    "obtenido": "Tras el código entra a «Mis trámites».",
+    "shot": "shots/r2_CP-07.png"
+  },
+  {
+    "id": "CP-08",
+    "nombre": "Transferencia aplica 2% de descuento sobre el monto a pagar",
+    "ms": 4099,
+    "ok": true,
+    "obtenido": "$15.000 al 100% por transferencia = $14.700 (−$300, 2%).",
+    "shot": "shots/r2_CP-08.png"
+  },
+  {
+    "id": "CP-09",
+    "nombre": "Contratación completa (estacionamiento, sin campos opcionales) con pago Webpay crea la solicitud",
+    "ms": 24301,
+    "ok": true,
+    "obtenido": "Folio EO-2026-000485 creado con 1 documento(s); en Firestore: estado «ingresado», pagado 15000.",
+    "shot": "shots/r2_CP-09.png"
+  },
+  {
+    "id": "CP-10",
+    "nombre": "Estado del trámite permite descargar el borrador en PDF",
+    "ms": 3194,
+    "ok": true,
+    "obtenido": "Descarga EO-2026-000485_borrador.pdf (100813 bytes, PDF válido).",
+    "shot": "shots/r2_CP-10.png"
+  },
+  {
+    "id": "CP-11",
+    "nombre": "El CRM no se abre sin iniciar sesión",
+    "ms": 3154,
+    "ok": true,
+    "obtenido": "Redirige al login.",
+    "shot": "shots/r2_CP-11.png"
+  },
+  {
+    "id": "CP-12",
+    "nombre": "El segundo factor del CRM rechaza un código incorrecto",
+    "ms": 7703,
+    "ok": true,
+    "obtenido": "Rechaza el código y no entra.",
+    "shot": "shots/r2_CP-12.png"
+  },
+  {
+    "id": "CP-13",
+    "nombre": "La solicitud pagada aparece sola en el tablero del CRM",
+    "ms": 4110,
+    "ok": true,
+    "obtenido": "El folio EO-2026-000485 aparece en la columna «Ingresado».",
+    "shot": "shots/r2_CP-13.png"
+  },
+  {
+    "id": "CP-14",
+    "nombre": "La auditoría se exporta a Excel ordenado (columnas ajustadas, filtros, encabezado fijo)",
+    "ms": 3661,
+    "ok": true,
+    "obtenido": "dl/auditoria-easy-office-2026-11-10.xlsx",
+    "shot": "shots/r2_CP-14.png",
+    "xlsx": "dl/auditoria-easy-office-2026-11-10.xlsx"
+  },
+  {
+    "id": "CP-15",
+    "nombre": "Reglas: nadie puede borrar una solicitud desde la web",
+    "ms": 187,
+    "ok": true,
+    "obtenido": "DELETE → HTTP 403"
+  },
+  {
+    "id": "CP-16",
+    "nombre": "Reglas: un registro de auditoría no se puede modificar",
+    "ms": 176,
+    "ok": true,
+    "obtenido": "PATCH → HTTP 403"
+  },
+  {
+    "id": "CP-17",
+    "nombre": "Reglas: no se puede crear una solicitud ya «completada» ni con folio inválido",
+    "ms": 150,
+    "ok": true,
+    "obtenido": "estado completado → HTTP 403; folio inválido → HTTP 403"
+  },
+  {
+    "id": "CP-18",
+    "nombre": "Reglas: colecciones no declaradas están cerradas",
+    "ms": 51,
+    "ok": true,
+    "obtenido": "GET /secreto → HTTP 403"
+  },
+  {
+    "id": "CP-19",
+    "nombre": "El portal se ve completo en celular (390 px, sin scroll horizontal)",
+    "ms": 9819,
+    "ok": true,
+    "obtenido": "4 páginas sin desborde horizontal.",
+    "shot": "shots/r2_CP-19.png"
+  },
+  {
+    "id": "JS",
+    "errores": []
+  }
+]

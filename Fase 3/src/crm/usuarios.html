@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usuarios y roles · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+
+  <div id="invModal" class="hidden fixed inset-0 z-50 bg-eo-ink/60 backdrop-blur-sm grid place-items-center p-4">
+    <form id="invForm" class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 fade-in">
+      <p class="font-semibold text-lg">Invitar colaborador</p>
+      <div><label class="label">Nombre completo</label><input id="iNom" class="input" required></div>
+      <div><label class="label">Correo</label><input id="iMail" type="email" class="input" required></div>
+      <div><label class="label">Rol</label><select id="iRol" class="input"></select></div>
+      <p class="text-xs text-eo-muted">Recibirá un enlace para crear su contraseña y activar el segundo factor.</p>
+      <div class="flex justify-end gap-2"><button type="button" onclick="invModal.classList.add('hidden')" class="btn-outline btn-sm">Cancelar</button><button class="btn-primary btn-sm">Enviar invitación</button></div>
+    </form>
+  </div>
+
+  <script>
+    EO.mountCrm('usuarios', 'Usuarios y roles', 'Control de acceso basado en roles (RBAC)');
+    const D = EO_DATA, main = document.getElementById('main');
+    const users = D.equipo;
+    const saveU = (u) => EO.saveUsuario(u);
+    const roleColor = { Administrador: 'pill-ink', Ejecutivo: 'pill-green', Finanzas: 'pill-blue', Freelance: 'pill-amber' };
+
+    function render() {
+      if (!EO.can('usuarios')) return EO.denied(main, 'usuarios');
+      main.innerHTML = `
+        <div class="grid xl:grid-cols-[1fr_1.1fr] gap-6 items-start">
+          <section class="card overflow-hidden">
+            <div class="flex items-center justify-between p-5 border-b border-eo-line"><div><h2 class="font-semibold">Equipo</h2><p class="text-xs text-eo-muted">${users.filter(u => u.estado === 'Activo').length} activos de ${users.length}</p></div>
+              <button id="inv" class="btn-primary btn-sm">${EO.icon('user-plus', 'w-3.5 h-3.5')} Invitar</button></div>
+            <ul class="divide-y divide-eo-line">${users.map((u, i) => `
+              <li class="p-4 sm:px-5 flex flex-wrap items-center gap-3">
+                <span class="w-10 h-10 rounded-full ${u.estado === 'Activo' ? 'bg-eo-ink text-white' : 'bg-slate-200 text-slate-500'} text-xs font-bold grid place-items-center shrink-0">${u.iniciales}</span>
+                <div class="flex-1 min-w-[150px]"><p class="text-sm font-semibold">${EO.esc(u.nombre)} ${u.estado !== 'Activo' ? '<span class="pill-red !text-[10px] ml-1">Suspendido</span>' : ''}</p><p class="text-[11px] text-eo-muted">${EO.esc(u.email)} · ${u.ultimo}</p></div>
+                <select data-rol="${i}" class="input !w-auto !py-1.5 !text-xs" ${u.id === 'u1' ? 'disabled' : ''}>${Object.keys(D.roles).map(r => `<option ${r === u.rol ? 'selected' : ''}>${r}</option>`).join('')}</select>
+                ${u.id !== 'u1' ? `<button data-st="${i}" class="p-2 rounded-lg hover:bg-eo-bg text-slate-500" title="${u.estado === 'Activo' ? 'Suspender' : 'Reactivar'}">${EO.icon(u.estado === 'Activo' ? 'user-x' : 'user-check', 'w-4 h-4')}</button>` : '<span class="w-8"></span>'}
+              </li>`).join('')}</ul>
+          </section>
+
+          <section class="card overflow-hidden">
+            <div class="p-5 border-b border-eo-line"><h2 class="font-semibold">Matriz de permisos</h2><p class="text-xs text-eo-muted">Los cambios aplican de inmediato y quedan en la auditoría. El rol Administrador no se puede restringir.</p></div>
+            <div class="overflow-x-auto"><table class="table-eo min-w-[560px]"><thead><tr><th>Permiso</th>${Object.keys(D.roles).map(r => `<th class="text-center">${r}</th>`).join('')}</tr></thead><tbody>
+              ${D.permisos.map(([k, n]) => `<tr><td class="text-sm">${n}</td>${Object.keys(D.roles).map(r => `<td class="text-center"><input type="checkbox" data-p="${k}" data-r="${r}" class="w-4 h-4 accent-eo-green" ${D.roles[r].permisos.includes(k) ? 'checked' : ''} ${r === 'Administrador' ? 'disabled' : ''}></td>`).join('')}</tr>`).join('')}
+            </tbody></table></div>
+            <div class="p-5 grid sm:grid-cols-2 gap-3 border-t border-eo-line">${Object.entries(D.roles).map(([r, v]) => `<div class="rounded-xl bg-eo-bg p-3.5"><span class="${roleColor[r]} !text-[10px]">${r}</span><p class="text-xs text-eo-muted mt-2">${v.desc}</p></div>`).join('')}</div>
+          </section>
+        </div>`;
+      main.querySelectorAll('[data-rol]').forEach(s => s.onchange = () => { const u = users[+s.dataset.rol]; EO.audit('Cambio de rol', '—', `${u.nombre}: ${u.rol} → ${s.value}`); u.rol = s.value; saveU(u); EO.toast('Rol actualizado.'); render(); });
+      main.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const u = users[+b.dataset.st]; u.estado = u.estado === 'Activo' ? 'Suspendido' : 'Activo'; EO.audit(u.estado === 'Activo' ? 'Usuario reactivado' : 'Usuario suspendido', '—', `${u.nombre} (${u.rol})`); saveU(u); render(); });
+      main.querySelectorAll('[data-p]').forEach(c => c.onchange = () => {
+        const r = c.dataset.r, p = c.dataset.p, set = new Set(D.roles[r].permisos);
+        c.checked ? set.add(p) : set.delete(p); D.roles[r].permisos = [...set];
+        EO.savePermisos();
+        EO.audit('Cambio de permisos', '—', `Rol ${r}: ${c.checked ? 'agregado' : 'quitado'} «${D.permisos.find(x => x[0] === p)[1]}»`);
+        EO.toast(`Permiso ${c.checked ? 'otorgado' : 'revocado'} para ${r}.`);
+      });
+      document.getElementById('inv').onclick = () => { iRol.innerHTML = Object.keys(D.roles).map(r => `<option ${r === 'Ejecutivo' ? 'selected' : ''}>${r}</option>`).join(''); invModal.classList.remove('hidden'); };
+      EO.refreshIcons();
+    }
+    document.getElementById('invForm').onsubmit = e => {
+      e.preventDefault();
+      const nu = { id: 'u' + (users.reduce((m, x) => Math.max(m, parseInt(x.id.slice(1), 10) || 0), 0) + 1), nombre: iNom.value, iniciales: EO.initials(iNom.value), rol: iRol.value, email: iMail.value.trim().toLowerCase(), estado: 'Activo', ultimo: 'Invitación enviada' };
+      users.push(nu); saveU(nu); EO.audit('Usuario invitado', '—', `${iNom.value} (${iRol.value})`); invModal.classList.add('hidden'); e.target.reset(); EO.toast('Invitación enviada.', 'mail'); render();
+    };
+    render();
+  </script>
+</body>
+</html>
