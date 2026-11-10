@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auditoría · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+  <script src="../assets/xlsx.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+
+  <script>
+    EO.mountCrm('auditoria', 'Registro de auditoría', 'Log inmutable de acciones sobre datos, documentos, estados y pagos');
+    const D = EO_DATA, main = document.getElementById('main');
+    let q = '', fU = '', fT = '';
+    const tipos = { lectura: ['Lectura de datos del cliente'], descarga: ['Descarga de documento', 'Exportación de datos'], estado: ['Cambio de estado', 'Asignación de ticket', 'Cambio de prioridad', 'Envío a firma FEA', 'Documento aprobado', 'Solicitud de subsanación'], finanzas: ['Pago conciliado', 'Conciliación manual', 'Recordatorio de pago', 'Pago confirmado', 'Comprobante de transferencia recibido', 'Transferencia validada', 'Transferencia rechazada'], seguridad: ['Cambio de permisos', 'Cambio de rol', 'Usuario suspendido', 'Usuario reactivado', 'Usuario invitado', 'Intento de exportación bloqueado', 'Acceso denegado', 'Inicio de sesión', 'Cuenta de cliente creada', 'Cuenta bloqueada por intentos fallidos'] };
+    const tipoDe = a => Object.keys(tipos).find(k => tipos[k].includes(a)) || 'estado';
+    const tone = { lectura: 'pill-gray', descarga: 'pill-blue', estado: 'pill-green', finanzas: 'pill-amber', seguridad: 'pill-red' };
+    // huella encadenada: cada registro incluye la huella del anterior (evidencia de no alteración)
+    function chain(rows) {
+      let prev = '0000000';
+      // (los registros que vienen de Firebase traen su id en la posición 6: no entra en la huella)
+      return rows.slice().reverse().map(r => { r = r.slice(0, 6); let h = 0; const s = prev + r.join('|'); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; prev = h.toString(16).padStart(8, '0'); return [...r, prev]; }).reverse();
+    }
+    function render() {
+      if (!EO.can('auditoria')) return EO.denied(main, 'auditoria');
+      const all = chain([...EO.store.get('eo_audit', []), ...D.auditoria].sort((a, b) => b[0].localeCompare(a[0])));
+      const L = all.filter(r => (!fU || r[1] === fU) && (!fT || tipoDe(r[2]) === fT) && (!q || r.join(' ').toLowerCase().includes(q)));
+      const name = id => id === 'sys' ? 'Sistema' : (EO.usuario(id) || { nombre: id }).nombre;
+      main.innerHTML = `
+        <div class="rounded-2xl bg-eo-ink text-white p-5 mb-6 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+          <p class="flex gap-3 text-sm">${EO.icon('lock-keyhole', 'w-5 h-5 text-eo-bright shrink-0')}<span><b>Registro inmutable · solo lectura.</b><br><span class="text-slate-400 text-xs">Cada evento queda encadenado con la huella del anterior. Ningún rol puede editar o borrar registros.</span></span></p>
+          <div class="flex gap-6 text-center shrink-0"><div><p class="font-display text-2xl font-extrabold text-eo-bright">${all.length}</p><p class="text-[11px] text-slate-400">eventos</p></div>
+            <div><p class="font-display text-2xl font-extrabold text-eo-bright">${all.filter(r => tipoDe(r[2]) === 'seguridad').length}</p><p class="text-[11px] text-slate-400">de seguridad</p></div>
+            <div><p class="font-display text-2xl font-extrabold text-eo-bright">✓</p><p class="text-[11px] text-slate-400">cadena íntegra</p></div></div>
+        </div>
+        <div class="flex flex-col md:flex-row gap-3 mb-5">
+          <div class="relative flex-1 max-w-md"><span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">${EO.icon('search')}</span><input id="q" class="input !pl-10" placeholder="Buscar por folio, acción o detalle" value="${EO.esc(q)}"></div>
+          <select id="fU" class="input md:!w-48"><option value="">Todos los usuarios</option><option value="sys" ${fU === 'sys' ? 'selected' : ''}>Sistema</option>${D.equipo.map(u => `<option value="${u.id}" ${fU === u.id ? 'selected' : ''}>${u.nombre}</option>`).join('')}</select>
+          <select id="fT" class="input md:!w-48"><option value="">Todos los tipos</option>${Object.keys(tipos).map(k => `<option value="${k}" ${fT === k ? 'selected' : ''}>${k[0].toUpperCase() + k.slice(1)}</option>`).join('')}</select>
+          <button id="exp" class="btn-outline md:ml-auto">${EO.icon('file-spreadsheet')} Exportar a Excel</button>
+        </div>
+        <div class="card overflow-x-auto"><table class="table-eo min-w-[980px]"><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th>Folio</th><th>Detalle</th><th>Origen</th><th>Huella</th></tr></thead><tbody>
+          ${L.map(r => `<tr><td class="whitespace-nowrap text-eo-muted font-mono text-xs">${r[0]}</td><td class="whitespace-nowrap">${name(r[1])}</td><td><span class="${tone[tipoDe(r[2])]}">${r[2]}</span></td>
+            <td>${r[3] !== '—' ? `<a href="ticket.html?folio=${r[3]}" class="font-semibold hover:text-eo-green whitespace-nowrap">${r[3]}</a>` : '<span class="text-slate-400">—</span>'}</td><td class="text-eo-muted">${EO.esc(r[4])}</td><td class="font-mono text-xs text-eo-muted">${r[5]}</td><td class="font-mono text-[11px] text-slate-400">${r[6]}</td></tr>`).join('') || '<tr><td colspan="7" class="text-center text-eo-muted py-10">Sin resultados.</td></tr>'}
+        </tbody></table></div>`;
+      document.getElementById('q').oninput = e => { q = e.target.value.toLowerCase(); const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos, pos); };
+      document.getElementById('fU').onchange = e => { fU = e.target.value; render(); };
+      document.getElementById('fT').onchange = e => { fT = e.target.value; render(); };
+      document.getElementById('exp').onclick = () => {
+        const filtros = [fU && 'usuario: ' + name(fU), fT && 'tipo: ' + fT, q && 'búsqueda: «' + q + '»'].filter(Boolean).join(' · ');
+        EO_XLSX.descargar(`auditoria-easy-office-${new Date().toISOString().slice(0, 10)}.xlsx`, {
+          hoja: 'Auditoría', titulo: 'Registro de auditoría · Easy Office',
+          subtitulo: `Exportado el ${new Date().toLocaleString('es-CL')} por ${name(EO.crmUser())} · ${L.length} registros${filtros ? ' · ' + filtros : ''}`,
+          columnas: [{ n: 'Fecha y hora' }, { n: 'Usuario', max: 28 }, { n: 'Tipo' }, { n: 'Acción', max: 36 }, { n: 'Folio' }, { n: 'Detalle', max: 70, ajustar: true }, { n: 'Origen (IP)' }, { n: 'Huella' }],
+          filas: L.map(r => [r[0], name(r[1]), tipoDe(r[2])[0].toUpperCase() + tipoDe(r[2]).slice(1), r[2], r[3], r[4], r[5], r[6]]),
+        });
+        EO.audit('Exportación de datos', '—', `Auditoría (${L.length} registros) · Excel`);
+        EO.toast('Registro exportado a Excel.', 'download');
+      };
+      EO.refreshIcons();
+    }
+    render();
+  </script>
+</body>
+</html>

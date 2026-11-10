@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contratar trámite · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+  <script src="../assets/forms.js"></script>
+</head>
+<body class="bg-eo-bg min-h-screen pb-28">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="flowHeader"></div>
+  <div id="stepper"></div>
+
+  <div id="layout" class="container-eo py-8 lg:py-10 grid lg:grid-cols-[1fr_320px] gap-8 items-start">
+    <main id="main" class="min-w-0"></main>
+    <aside id="aside" class="space-y-4 lg:sticky lg:top-6"></aside>
+  </div>
+
+  <!-- Barra inferior -->
+  <div class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-eo-line">
+    <div class="container-eo h-20 flex items-center justify-between gap-4">
+      <p id="barMsg" class="text-xs sm:text-sm text-eo-muted flex items-center gap-2 min-w-0"><i data-lucide="save" class="w-4 h-4 shrink-0"></i><span class="truncate"></span></p>
+      <div class="flex gap-3 shrink-0">
+        <button id="back" class="btn-outline"><i data-lucide="arrow-left" class="w-4 h-4"></i> Atrás</button>
+        <button id="next" class="btn-primary"><i data-lucide="arrow-right" class="w-4 h-4"></i> <span>Continuar</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay pasarela -->
+  <div id="payOverlay" class="hidden fixed inset-0 z-50 bg-eo-ink/70 backdrop-blur-sm grid place-items-center p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center fade-in">
+      <span class="pill-amber !text-[10px] uppercase tracking-wider mb-4">Sandbox · sin cargo real</span>
+      <div class="w-14 h-14 mx-auto my-4 rounded-full border-4 border-eo-mint border-t-eo-green animate-spin"></div>
+      <p class="font-bold" id="payTitle">Registrando tu pago…</p>
+      <p class="text-sm text-eo-muted mt-1" id="paySub">No cierres esta ventana.</p>
+    </div>
+  </div>
+
+  <script>
+    const D = EO_DATA, FM = EO_FORMS;
+    const t = EO.tramite(EO.param('id')) || EO.tramite('inicio-actividades');
+    const KEY = 'eo_flow_' + t.id;
+    const S = EO.store.get(KEY, null) || { step: 1, v: {}, docs: {}, modo: +(EO.param('modo') || 50), metodo: 'tarjeta' };
+    if (!['tarjeta', 'transferencia'].includes(S.metodo)) S.metodo = 'tarjeta';
+    if (EO.param('modo')) S.modo = +EO.param('modo');
+    const ses = EO.session();
+    if (EO.param('step')) { S.step = +EO.param('step'); history.replaceState(null, '', location.pathname + '?id=' + t.id); }
+    if (ses && S.step === 1) S.step = 2;
+    if (!ses) S.step = 1;
+    // precarga con los datos de la cuenta verificada
+    if (ses) { S.v.rep = S.v.rep || ses.nombre; S.v.run = S.v.run || ses.run; S.v.email = S.v.email || ses.email; }
+    if (t.form === 'domicilio') { S.v.sucursal = S.v.sucursal || 'LF'; S.v.duracion = S.v.duracion || '12 meses'; }
+    if (t.form === 'sociedad' && !S.v._socios) S.v._socios = [{ nombre: S.v.rep || '', run: S.v.run || '', pct: 100, email: S.v.email || '' }];
+
+    const save = () => { EO.store.set(KEY, S); setBar('Tu avance se guardó hace unos segundos.'); };
+    const total = () => t.precio + (t.form === 'domicilio' ? FM.extrasTotal(S.v) : 0);
+    const hoyPagar = () => Math.round(total() * S.modo / 100);
+    // lo que paga hoy el cliente: con transferencia se descuenta el 2%
+    const descHoy = () => S.metodo === 'transferencia' ? EO.descTransf(hoyPagar()) : 0;
+    const aPagar = () => hoyPagar() - descHoy();
+    const setBar = (m) => document.querySelector('#barMsg span').textContent = m;
+    const etapa = () => EO.flowSteps[S.step - 1];
+
+    document.title = t.titulo + ' · Contratar · Easy Office';
+    document.getElementById('flowHeader').innerHTML = EO.flowHeader(t.titulo);
+
+    /* ---------- Aside ---------- */
+    function aside() {
+      const ex = t.form === 'domicilio' ? FM.extras.filter(([k]) => S.v[k]) : [];
+      document.getElementById('aside').innerHTML = `
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4"><h3 class="font-semibold">Resumen del trámite</h3>${EO.icon('file-text', 'w-5 h-5 text-eo-green')}</div>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-eo-muted">Servicio</p>
+          <p class="text-sm mt-1 mb-4">${t.titulo}</p>
+          <div class="border-t border-eo-line pt-4 space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-eo-muted">Valor del servicio</span><span>${EO.clp(t.precio)}</span></div>
+            ${ex.map(([, n, p]) => `<div class="flex justify-between"><span class="text-eo-muted">+ ${n}</span><span>${EO.clp(p)}</span></div>`).join('')}
+            <div class="flex justify-between"><span class="text-eo-muted">Costo total</span><span class="font-bold">${EO.clp(total())} CLP</span></div>
+            <div class="flex justify-between"><span class="text-eo-muted">Plazo estimado</span><span class="font-bold">${t.plazo}</span></div>
+            <div class="flex justify-between"><span class="text-eo-muted">Etapa actual</span><span class="font-bold text-eo-green">${etapa()}</span></div>
+          </div>
+          ${S.step >= 4 ? `<div class="mt-4 rounded-xl bg-eo-mint p-4"><p class="text-[11px] uppercase tracking-wider text-eo-green">${S.step === 5 ? (S.metodo === 'transferencia' ? 'Monto a transferir' : 'Monto pagado') : 'Monto a pagar ahora'}</p><p class="font-display text-2xl font-extrabold text-eo-green">${EO.clp(S.step === 5 && S.metodo !== 'transferencia' && S.pagadoFinal != null ? S.pagadoFinal : aPagar())} CLP</p>${S.step === 4 && descHoy() ? `<p class="text-[11px] text-eo-green mt-1">Incluye 2% de descuento por transferencia (−${EO.clp(descHoy())})</p>` : ''}</div>` : ''}
+        </div>
+        <div class="rounded-2xl bg-eo-ink text-white p-5 flex gap-3">${EO.icon('shield-check', 'w-5 h-5 text-eo-bright shrink-0')}
+          <div><p class="text-sm font-medium">Tus datos están protegidos</p><p class="text-xs text-slate-400 mt-1">Conexión cifrada y revisión confidencial. Solo el ejecutivo asignado verá tu información.</p></div></div>
+        <div class="rounded-2xl bg-eo-mint2 p-5"><p class="text-sm font-semibold">¿Tienes dudas?</p><p class="text-xs text-eo-muted mt-1">Escríbenos por WhatsApp o llama al +56 2 2277 7781.</p></div>`;
+    }
+
+    const head = (n, title, sub) => `<span class="eyebrow">Paso ${n} de 5 · ${EO.flowSteps[n - 1]}</span>
+      <h1 class="mt-2 text-2xl sm:text-3xl font-bold tracking-tight">${title}</h1><p class="mt-2 text-sm text-eo-muted mb-6">${sub}</p>`;
+
+    /* ---------- Paso 1 ---------- */
+    function step1() {
+      const vuelta = encodeURIComponent('contratar.html?id=' + t.id + '&modo=' + S.modo + '&step=2');
+      return head(1, 'Ingresa a tu cuenta', 'Necesitamos saber quién solicita el trámite. Usaremos los datos de tu cuenta para precargar el formulario.') + `
+        <div class="card p-8 text-center max-w-xl">
+          <span class="w-14 h-14 rounded-2xl bg-eo-mint text-eo-green grid place-items-center mx-auto mb-4">${EO.icon('user-round-check', 'w-7 h-7')}</span>
+          <h2 class="font-bold text-lg">Ingresa o crea tu cuenta Easy Office</h2>
+          <p class="text-sm text-eo-muted mt-1 mb-6">Tu cuenta se verifica con un código a tu correo y celular, y cada ingreso se confirma con un código.</p>
+          <a href="ingresar.html?next=${vuelta}" class="btn-primary w-full !py-3.5">${EO.icon('log-in', 'w-5 h-5')} Iniciar sesión</a>
+          <a href="ingresar.html?tab=reg&next=${vuelta}" class="btn-outline w-full mt-2">${EO.icon('user-plus', 'w-4 h-4')} Crear una cuenta</a>
+        </div>`;
+    }
+
+    /* ---------- Paso 2 ---------- */
+    function field(c) {
+      const val = S.v[c.k] ?? '';
+      const req = c.r ? ' *' : ' <span class="font-normal text-eo-muted">(opcional)</span>';
+      let input;
+      if (c.t === 'select') input = `<select data-k="${c.k}" class="input"><option value="">Selecciona…</option>${c.o.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+      else if (c.t === 'sucursal') input = `<div class="grid sm:grid-cols-3 gap-3">${D.sucursales.map(s => `
+          <label class="cursor-pointer rounded-xl border-2 p-4 transition ${val === s.id ? 'border-eo-green bg-eo-mint2' : 'border-eo-line hover:border-eo-border'}">
+            <input type="radio" name="suc" value="${s.id}" data-k="sucursal" class="sr-only" ${val === s.id ? 'checked' : ''}>
+            <span class="flex items-center justify-between"><span class="font-semibold text-sm">${s.comuna}</span>${val === s.id ? EO.icon('circle-check', 'w-5 h-5 text-eo-green') : ''}</span>
+            <span class="block text-xs text-eo-muted mt-1">${s.direccion}</span></label>`).join('')}</div>`;
+      else {
+        const type = { date: 'date', email: 'email', number: 'number' }[c.t] || 'text';
+        input = `<div class="relative"><input data-k="${c.k}" data-t="${c.t}" type="${type}" class="input pr-10" value="${EO.esc(val)}" placeholder="${EO.esc(c.o || '')}"><span class="vicon absolute right-3 top-1/2 -translate-y-1/2"></span></div>`;
+      }
+      return `<div class="${c.full || c.t === 'sucursal' ? 'sm:col-span-2' : ''}"><label class="label">${c.l}${req}</label>${input}<p class="hint" data-h="${c.k}">${c.t === 'rut' ? 'Formato: 12.345.678-5' : c.h || ''}</p></div>`;
+    }
+    function socios() {
+      const list = S.v._socios;
+      const sum = list.reduce((a, s) => a + (+s.pct || 0), 0);
+      return list.map((s, i) => `
+        <div class="rounded-xl bg-eo-bg p-4 sm:p-5 mb-3">
+          <div class="flex items-center justify-between mb-3"><p class="flex items-center gap-2 font-semibold text-sm"><span class="w-6 h-6 rounded-full bg-eo-green text-white text-xs grid place-items-center">${i + 1}</span> Datos del socio</p>
+          ${list.length > 1 ? `<button data-del="${i}" class="text-xs font-semibold text-eo-red flex items-center gap-1">${EO.icon('trash-2', 'w-3.5 h-3.5')} Quitar socio</button>` : ''}</div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div><label class="label">Nombre completo</label><input data-s="${i}" data-f="nombre" class="input" value="${EO.esc(s.nombre)}"></div>
+            <div><label class="label">RUN</label><input data-s="${i}" data-f="run" class="input" value="${EO.esc(s.run)}" placeholder="12.345.678-5"></div>
+            <div><label class="label">Participación (%)</label><input data-s="${i}" data-f="pct" type="number" min="0" max="100" class="input" value="${EO.esc(s.pct)}"></div>
+            <div><label class="label">Correo electrónico</label><input data-s="${i}" data-f="email" type="email" class="input" value="${EO.esc(s.email)}"></div>
+          </div>
+        </div>`).join('') + `
+        <button id="addSocio" class="w-full rounded-xl border border-dashed border-eo-border bg-white py-3 text-sm font-semibold text-eo-ink hover:border-eo-green hover:text-eo-green flex items-center justify-center gap-2">${EO.icon('user-plus')} Agregar otro socio</button>
+        <div class="mt-3 rounded-lg px-4 py-2.5 flex justify-between text-xs font-semibold ${sum === 100 ? 'bg-eo-mint text-eo-green' : 'bg-orange-50 text-eo-amber'}"><span>Participación registrada</span><span id="pctSum">${sum}% ${sum === 100 ? 'completo' : '(debe sumar 100%)'}</span></div>`;
+    }
+    function step2() {
+      const sch = FM.schemas[t.form];
+      return head(2, t.form === 'sociedad' ? 'Cuéntanos sobre tu sociedad' : 'Completa los datos de tu documento', 'Mientras completas el formulario generamos el borrador. Revisaremos la información antes de enviarla.') + `
+        <div class="rounded-xl bg-blue-50/70 border border-blue-100 px-4 py-3 text-xs text-slate-600 flex items-center gap-2 mb-5">${EO.icon('info', 'w-4 h-4 text-eo-blue')} Los campos con * son obligatorios. Precargamos los datos de tu cuenta y guardamos tu avance automáticamente.</div>
+        <div class="grid xl:grid-cols-[1.1fr_1fr] gap-6 items-start">
+          <div class="space-y-5" id="formCol">
+          ${sch.map(s => `
+            <section class="card p-5 sm:p-6">
+              <div class="flex gap-3 mb-5"><span class="w-9 h-9 rounded-lg bg-eo-mint text-eo-green grid place-items-center shrink-0">${EO.icon(s.icono, 'w-[18px] h-[18px]')}</span>
+                <div><h2 class="font-semibold">${s.titulo}</h2><p class="text-xs text-eo-muted">${s.desc}</p></div></div>
+              ${s.socios ? `<div id="sociosBox">${socios()}</div>`
+              : s.extras ? `<div class="space-y-2">${FM.extras.map(([k, n, p, c]) => `<label class="flex items-center justify-between gap-3 rounded-xl border border-eo-line px-4 py-3 cursor-pointer hover:border-eo-border"><span class="flex items-center gap-3"><input type="checkbox" data-k="${k}" class="w-4 h-4 accent-eo-green" ${S.v[k] ? 'checked' : ''}><span class="text-sm font-medium">${n}</span></span><span class="text-sm text-eo-muted">+ ${EO.clp(p)} / ${c}</span></label>`).join('')}</div>`
+              : s.mods ? `<div class="space-y-2">${FM.mods.map(([k, n, ph]) => `<div class="rounded-xl border border-eo-line px-4 py-3"><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" data-k="${k}" class="w-4 h-4 accent-eo-green" ${S.v[k] ? 'checked' : ''}><span class="text-sm font-medium">${n}</span></label>
+                  <input data-k="${k}_v" class="input mt-3 ${S.v[k] ? '' : 'hidden'}" placeholder="${ph}" value="${EO.esc(S.v[k + '_v'] || '')}"></div>`).join('')}</div>`
+              : `<div class="grid sm:grid-cols-2 gap-4">${s.campos.map(field).join('')}</div>
+                 ${s.titulo === 'Dirección tributaria' ? `<label class="mt-4 flex items-center gap-2 text-xs"><input type="checkbox" data-k="autoriza" class="w-4 h-4 accent-eo-green" ${S.v.autoriza ? 'checked' : ''}> Confirmo que cuento con autorización para usar esta dirección como domicilio tributario.</label>` : ''}`}
+            </section>`).join('')}
+          </div>
+          <div class="xl:sticky xl:top-6 space-y-4">
+            <div class="hidden xl:flex card !shadow-none px-5 py-4 items-center justify-between gap-4 text-sm">
+              <div class="min-w-0"><p class="text-[10px] font-semibold uppercase tracking-wider text-eo-muted">Servicio</p><p class="truncate font-medium">${t.titulo}</p></div>
+              <div class="text-right shrink-0"><p class="text-[10px] font-semibold uppercase tracking-wider text-eo-muted">Total · ${t.plazo}</p><p class="font-display font-extrabold">${EO.clp(total())} CLP</p></div>
+            </div>
+            <div class="card overflow-hidden">
+              <div class="flex items-center justify-between px-5 py-3.5 border-b border-eo-line bg-eo-mint2">
+                <p class="text-sm font-semibold flex items-center gap-2">${EO.icon('scan-eye', 'w-4 h-4 text-eo-green')} Vista previa del borrador</p>
+                <span id="fillPct" class="pill-green"></span>
+              </div>
+              <div id="preview" class="doc-preview p-6 sm:p-7 text-[12.5px] leading-relaxed text-slate-700 space-y-3 max-h-[70vh] overflow-y-auto scroll-thin"></div>
+              <div class="px-5 py-3 border-t border-eo-line text-[11px] text-eo-muted flex items-center gap-1.5">${EO.icon('info', 'w-3.5 h-3.5')} Un ejecutivo revisará el borrador antes de enviarlo a firma. Aún no se cobra nada.</div>
+            </div>
+          </div>
+        </div>`;
+    }
+    function validateInput(el) {
+      const k = el.dataset.k, tp = el.dataset.t, v = el.value.trim();
+      const h = document.querySelector(`[data-h="${k}"]`), ic = el.parentElement.querySelector('.vicon');
+      let ok = null, msg = '';
+      if (tp === 'rut' && v) { ok = EO.rut.valid(v); msg = ok ? 'RUT válido.' : 'RUT inválido: revisa el dígito verificador.'; }
+      else if (tp === 'email' && v) { ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); msg = ok ? 'Usaremos este correo para notificaciones.' : 'Correo no válido.'; }
+      else if (tp === 'phone' && v) { ok = v.replace(/\D/g, '').replace(/^56/, '').length === 9; msg = ok ? 'Teléfono válido.' : 'Incluye 9 dígitos después de +56.'; }
+      el.classList.toggle('is-valid', ok === true); el.classList.toggle('is-invalid', ok === false);
+      if (h && ok !== null) { h.className = 'hint ' + (ok ? 'ok' : 'err'); h.innerHTML = EO.icon(ok ? 'circle-check' : 'circle-alert', 'w-3.5 h-3.5') + ' ' + msg; }
+      if (ic) ic.innerHTML = ok === null ? '' : EO.icon(ok ? 'circle-check' : 'circle-alert', 'w-4 h-4 ' + (ok ? 'text-eo-green' : 'text-eo-red'));
+      if (ok !== null) EO.refreshIcons();
+      return ok !== false;
+    }
+    function updatePreview() {
+      const p = document.getElementById('preview'); if (!p) return;
+      p.innerHTML = FM.render(t.form, S.v, t);
+      const filled = p.querySelectorAll('.fill').length, empty = p.querySelectorAll('.empty').length;
+      document.getElementById('fillPct').textContent = Math.round(filled / Math.max(1, filled + empty) * 100) + '% completo';
+    }
+    function bind2() {
+      const main = document.getElementById('main');
+      main.querySelectorAll('[data-k]').forEach(el => {
+        const ev = el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(ev, () => {
+          const k = el.dataset.k;
+          S.v[k] = el.type === 'checkbox' ? el.checked : el.value;
+          if (k.startsWith('m_') && el.type === 'checkbox') main.querySelector(`[data-k="${k}_v"]`).classList.toggle('hidden', !el.checked);
+          if (el.dataset.t) validateInput(el);
+          save(); updatePreview();
+          if (k === 'sucursal' || k.startsWith('x_')) { render(); }
+        });
+        if (el.dataset.t === 'rut') el.addEventListener('blur', () => { if (el.value) { el.value = EO.rut.format(el.value); S.v[el.dataset.k] = el.value; save(); updatePreview(); validateInput(el); } });
+        if (el.dataset.t && el.value) validateInput(el);
+      });
+      const sb = document.getElementById('sociosBox');
+      if (sb) {
+        sb.addEventListener('input', e => {
+          const i = e.target.dataset.s; if (i == null) return;
+          S.v._socios[i][e.target.dataset.f] = e.target.value; save(); updatePreview();
+          const sum = S.v._socios.reduce((a, s) => a + (+s.pct || 0), 0);
+          const ps = document.getElementById('pctSum'); ps.textContent = sum + '% ' + (sum === 100 ? 'completo' : '(debe sumar 100%)');
+          ps.parentElement.className = 'mt-3 rounded-lg px-4 py-2.5 flex justify-between text-xs font-semibold ' + (sum === 100 ? 'bg-eo-mint text-eo-green' : 'bg-orange-50 text-eo-amber');
+        });
+        sb.addEventListener('click', e => {
+          const d = e.target.closest('[data-del]');
+          if (d) { S.v._socios.splice(+d.dataset.del, 1); save(); sb.innerHTML = socios(); EO.refreshIcons(); updatePreview(); }
+          if (e.target.closest('#addSocio')) { S.v._socios.push({ nombre: '', run: '', pct: 0, email: '' }); save(); sb.innerHTML = socios(); EO.refreshIcons(); }
+        });
+      }
+      updatePreview();
+    }
+    function check2() {
+      const missing = [];
+      FM.schemas[t.form].forEach(s => (s.campos || []).forEach(c => { if (c.r && !String(S.v[c.k] || '').trim()) missing.push(c.l); }));
+      let bad = false;
+      document.querySelectorAll('#main [data-t]').forEach(el => { if (!validateInput(el)) bad = true; });
+      if (t.form === 'sociedad' && S.v._socios.reduce((a, s) => a + (+s.pct || 0), 0) !== 100) { EO.toast('La participación de los socios debe sumar 100%.', 'alert-circle'); return false; }
+      if (t.form === 'accionistas' && !FM.mods.some(([k]) => S.v[k])) { EO.toast('Selecciona al menos una modificación.', 'alert-circle'); return false; }
+      if (missing.length) { EO.toast(`Falta completar: ${missing.slice(0, 2).join(', ')}${missing.length > 2 ? '…' : ''}`, 'alert-circle'); return false; }
+      if (bad) { EO.toast('Revisa los campos marcados en rojo.', 'alert-circle'); return false; }
+      return true;
+    }
+
+    /* ---------- Paso 3 ---------- */
+    function docState(i) { return S.docs[i] || { st: 'pendiente' }; }
+    function step3() {
+      const st = t.documentos.map((_, i) => docState(i).st);
+      const n = (x) => st.filter(s => s === x).length;
+      return head(3, 'Adjunta los documentos requeridos', 'Sube copias legibles y vigentes. Validamos el formato automáticamente antes del pago.') + `
+        <div class="card !shadow-none px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 mb-5">
+          <p class="text-sm flex items-center gap-2">${EO.icon('files', 'w-4 h-4 text-eo-green')} ${t.documentos.length} documento(s) requerido(s)</p>
+          <div class="flex flex-wrap gap-2"><span class="pill-gray">● ${n('pendiente')} pendiente</span><span class="pill-green">● ${n('cargado')} listo</span><span class="pill-amber">● ${n('validando')} validando</span>${n('despues') ? `<span class="pill-blue">● ${n('despues')} después</span>` : ''}</div>
+        </div>
+        <div class="space-y-5">${t.documentos.map(([nom, d], i) => {
+          const s = docState(i);
+          const badge = { pendiente: '<span class="pill-gray">● Pendiente</span>', validando: '<span class="pill-amber">● Validando</span>', cargado: '<span class="pill-green">● Cargado</span>', despues: '<span class="pill-blue">● Lo subiré después</span>' }[s.st];
+          return `<section class="card p-5 sm:p-6">
+            <div class="flex items-start justify-between gap-3 mb-4"><div><h2 class="font-semibold">${nom}</h2><p class="text-xs text-eo-muted mt-0.5">${d}</p></div>${badge}</div>
+            <label class="dropzone block cursor-pointer bg-eo-mint2/60 px-6 py-8 text-center hover:bg-eo-mint transition">
+              <input type="file" class="sr-only" data-doc="${i}" accept=".pdf,.jpg,.jpeg,.png">
+              <span class="w-11 h-11 rounded-full bg-white border border-eo-line grid place-items-center mx-auto mb-3 text-eo-green">${EO.icon(s.file ? 'file-check-2' : 'upload-cloud', 'w-5 h-5')}</span>
+              <span class="block text-sm font-medium">${s.file ? 'Archivo asociado a este requisito' : 'Arrastra tu archivo o <span class="text-eo-green font-semibold">haz clic para buscar</span>'}</span>
+              <span class="block text-xs text-eo-muted mt-1">PDF, JPG o PNG · máx. 10 MB</span>
+            </label>
+            ${s.file ? `<div class="mt-4 rounded-xl bg-eo-bg px-4 py-3 flex items-center justify-between gap-3">
+              <span class="flex items-center gap-3 min-w-0"><span class="w-9 h-9 rounded-lg bg-white grid place-items-center text-eo-green shrink-0">${EO.icon('file-text', 'w-4 h-4')}</span>
+              <span class="min-w-0"><span class="block text-sm truncate">${EO.esc(s.file)}</span><span class="text-[11px] text-eo-muted">${s.size}</span></span></span>
+              <span class="flex items-center gap-3 shrink-0"><label class="text-xs font-semibold text-eo-green cursor-pointer">Reemplazar<input type="file" class="sr-only" data-doc="${i}" accept=".pdf,.jpg,.jpeg,.png"></label>
+              <button data-rm="${i}" class="p-1.5 rounded-md text-eo-red hover:bg-red-50" aria-label="Quitar">${EO.icon('trash-2', 'w-4 h-4')}</button></span></div>` : ''}
+            ${s.st === 'validando' ? `<div class="mt-4"><div class="flex justify-between text-xs text-eo-amber mb-1.5"><span>Revisando legibilidad y vigencia…</span><span data-pct="${i}">${s.pct || 0}%</span></div>
+              <div class="h-1.5 rounded-full bg-orange-100 overflow-hidden"><div data-bar="${i}" class="h-full bg-orange-400 transition-all" style="width:${s.pct || 0}%"></div></div></div>` : ''}
+            ${!s.file ? `<label class="mt-4 flex items-center gap-2 text-xs text-eo-muted"><input type="checkbox" data-later="${i}" class="accent-eo-green" ${s.st === 'despues' ? 'checked' : ''}> Lo subiré más tarde desde «Mis trámites» (el ejecutivo no podrá avanzar sin él).</label>` : ''}
+          </section>`;
+        }).join('')}</div>
+        ${st.includes('validando') ? `<div class="mt-5 rounded-xl border border-orange-200 bg-orange-50/60 px-5 py-4 flex gap-3 text-sm">${EO.icon('clock', 'w-5 h-5 text-eo-amber shrink-0')}<div><p class="font-semibold text-eo-amber">Validación en curso</p><p class="text-xs text-slate-600">Podrás continuar cuando termine la revisión. Suele tardar segundos.</p></div></div>` : ''}`;
+    }
+    function bind3() {
+      document.querySelectorAll('[data-doc]').forEach(inp => inp.onchange = () => {
+        const f = inp.files[0]; if (!f) return;
+        const i = +inp.dataset.doc;
+        if (f.size > 10 * 1024 * 1024) return EO.toast('El archivo supera los 10 MB.', 'alert-circle');
+        if (!/\.(pdf|jpe?g|png)$/i.test(f.name)) return EO.toast('Formato no permitido. Usa PDF, JPG o PNG.', 'alert-circle');
+        S.docs[i] = { st: 'validando', file: f.name, size: (f.size / 1048576).toFixed(1) + ' MB · ' + f.name.split('.').pop().toUpperCase(), pct: 0 };
+        save(); render(); simulate(i);
+      });
+      document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { delete S.docs[+b.dataset.rm]; save(); render(); });
+      document.querySelectorAll('[data-later]').forEach(c => c.onchange = () => { S.docs[+c.dataset.later] = { st: c.checked ? 'despues' : 'pendiente' }; save(); render(); });
+      const ready = t.documentos.filter((_, i) => docState(i).st === 'cargado' || docState(i).st === 'despues').length;
+      setBar(`${ready} de ${t.documentos.length} documentos listos.`);
+    }
+    function simulate(i) {
+      const tick = () => {
+        const d = S.docs[i]; if (!d || d.st !== 'validando') return;
+        d.pct = Math.min(100, (d.pct || 0) + 9 + Math.round(Math.random() * 14));
+        const b = document.querySelector(`[data-bar="${i}"]`), p = document.querySelector(`[data-pct="${i}"]`);
+        if (b) b.style.width = d.pct + '%'; if (p) p.textContent = d.pct + '%';
+        if (d.pct >= 100) { d.st = 'cargado'; save(); render(); EO.toast('Documento validado correctamente.'); } else setTimeout(tick, 220);
+      };
+      setTimeout(tick, 250);
+    }
+    function check3() {
+      const st = t.documentos.map((_, i) => docState(i).st);
+      if (st.includes('validando')) { EO.toast('Espera a que termine la validación.', 'clock'); return false; }
+      if (st.includes('pendiente')) { EO.toast('Adjunta los documentos o marca «Lo subiré más tarde».', 'alert-circle'); return false; }
+      return true;
+    }
+
+    /* ---------- Paso 4 ---------- */
+    function step4() {
+      const opt = (id, cur, title, sub, right, icon) => `
+        <label class="flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition ${cur ? 'border-eo-green bg-eo-mint2' : 'border-eo-line hover:border-eo-border'}">
+          <input type="radio" class="sr-only" ${id}>
+          ${icon ? `<span class="w-10 h-10 rounded-lg border border-eo-line bg-white grid place-items-center text-slate-600 shrink-0">${EO.icon(icon, 'w-5 h-5')}</span>` : `<span class="w-5 h-5 rounded-full border-2 grid place-items-center shrink-0 ${cur ? 'border-eo-green' : 'border-slate-300'}">${cur ? '<span class="w-2.5 h-2.5 rounded-full bg-eo-green"></span>' : ''}</span>`}
+          <span class="flex-1 min-w-0"><span class="block font-semibold text-sm">${title}</span><span class="block text-xs text-eo-muted">${sub}</span></span>
+          ${right}${icon ? `<span class="w-5 h-5 rounded-full border-2 grid place-items-center shrink-0 ${cur ? 'border-eo-green' : 'border-slate-300'}">${cur ? '<span class="w-2.5 h-2.5 rounded-full bg-eo-green"></span>' : ''}</span>` : ''}
+        </label>`;
+      return head(4, 'Elige cómo quieres pagar', 'Revisa el resumen, selecciona una modalidad y completa el pago en un entorno seguro.') + `
+        <div class="grid md:grid-cols-[300px_1fr] gap-5 items-start">
+          <div class="rounded-2xl bg-eo-ink text-white p-6">
+            <div class="flex justify-between items-center mb-5"><p class="font-semibold text-lg">Resumen</p><span class="w-8 h-8 rounded-lg bg-white/10 grid place-items-center">${EO.icon('receipt', 'w-4 h-4 text-eo-bright')}</span></div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400">Trámite</p><p class="text-sm mt-1 pb-4 border-b border-white/10">${t.titulo}</p>
+            <div class="py-4 space-y-3 text-sm border-b border-white/10">
+              <div class="flex justify-between"><span class="text-slate-400">Costo total</span><span class="font-bold">${EO.clp(total())} CLP</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Plazo</span><span class="font-bold">${t.plazo}</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Titular</span><span class="font-bold truncate ml-3">${EO.esc(S.v.razon || S.v.rep || '')}</span></div>
+            </div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400 mt-4 mb-2">Incluye</p>
+            <ul class="space-y-2 text-sm">${t.incluye.slice(0, 3).map(i => `<li class="flex gap-2">${EO.icon('check', 'w-4 h-4 text-eo-bright shrink-0 mt-0.5')} ${i}</li>`).join('')}</ul>
+          </div>
+          <div class="space-y-5">
+            <section class="card p-5 sm:p-6"><h2 class="font-semibold">Modalidad</h2><p class="text-xs text-eo-muted mb-4">Selecciona cuánto pagarás hoy.</p>
+              <div class="space-y-3" id="modos">
+                ${opt('data-modo="50"', S.modo === 50, '50% Abono', 'Pagas el saldo antes de la entrega final.', `<span class="font-display font-extrabold ${S.modo === 50 ? 'text-eo-green' : ''}">${EO.clp(total() / 2)}</span>`)}
+                ${opt('data-modo="100"', S.modo === 100, '100% Completo', 'Deja el trámite completamente pagado.', `<span class="font-display font-extrabold ${S.modo === 100 ? 'text-eo-green' : ''}">${EO.clp(total())}</span>`)}
+              </div>
+              <div class="mt-4 rounded-xl bg-eo-mint px-5 py-4 flex items-center justify-between"><div><p class="text-[11px] uppercase tracking-wider text-eo-green">Monto a pagar hoy</p><p class="text-[11px] text-eo-muted">${S.modo}% del costo total</p></div><div class="text-right">${descHoy() ? `<p class="text-xs text-eo-muted line-through">${EO.clp(hoyPagar())}</p>` : ''}<p class="font-display text-2xl sm:text-3xl text-eo-green">${EO.clp(aPagar())} CLP</p>${descHoy() ? '<p class="text-[11px] text-eo-green">2% de descuento por transferencia</p>' : ''}</div></div>
+            </section>
+            <section class="card p-5 sm:p-6"><h2 class="font-semibold">Medio de pago</h2><p class="text-xs text-eo-muted mb-4">Paga con tarjeta o por transferencia y obtén un 2% de descuento.</p>
+              <div class="space-y-3" id="metodos">
+                ${opt('data-met="tarjeta"', S.metodo === 'tarjeta', 'Tarjeta de débito o crédito <span class="pill-green !text-[10px] ml-1">Inmediato</span>', 'Pagas en línea con Webpay. Se confirma al instante.', '', 'credit-card')}
+                ${opt('data-met="transferencia"', S.metodo === 'transferencia', 'Transferencia bancaria <span class="pill-green !text-[10px] ml-1">−2%</span>', 'Transfiere desde tu banco con los datos de abajo y sube el comprobante. Finanzas la valida.', '', 'arrow-left-right')}
+              </div>
+              ${S.metodo === 'transferencia' ? `<div class="mt-4 space-y-3">
+                <p class="text-xs font-semibold">Datos para transferir ${EO.clp(aPagar())} <span class="font-normal text-eo-muted">(ya con el 2% de descuento)</span></p>${EO.datosBanco()}
+                <label class="dropzone block cursor-pointer bg-eo-mint2/60 px-4 py-4 text-center hover:bg-eo-mint transition">
+                  <input type="file" id="compIn" class="sr-only" accept=".pdf,.jpg,.jpeg,.png">
+                  <span class="block text-sm font-medium">${S.comprobante ? EO.icon('file-check-2', 'w-4 h-4 inline text-eo-green') + ' ' + EO.esc(S.comprobante) : 'Sube el comprobante <span class="text-eo-green font-semibold">(opcional ahora)</span>'}</span>
+                  <span class="block text-[11px] text-eo-muted mt-1">PDF, JPG o PNG. También puedes subirlo después desde «Mis trámites».</span>
+                </label></div>` : ''}
+            </section>
+            <p class="rounded-xl bg-blue-50/70 px-4 py-3 text-xs text-slate-600 flex items-center gap-2">${EO.icon('lock', 'w-4 h-4 text-eo-blue')} Easy Office nunca te pedirá tu clave bancaria ni guarda los datos de tu tarjeta.</p>
+          </div>
+        </div>`;
+    }
+    function bind4() {
+      document.querySelectorAll('[data-modo]').forEach(r => r.closest('label').onclick = (e) => { e.preventDefault(); S.modo = +r.dataset.modo; save(); render(); });
+      document.querySelectorAll('[data-met]').forEach(r => r.closest('label').onclick = (e) => { e.preventDefault(); S.metodo = r.dataset.met; save(); render(); });
+      setBar(S.metodo === 'transferencia' ? 'Finanzas verificará tu transferencia en menos de 24 h hábiles.' : 'Se abrirá la ventana de pago con tarjeta (Webpay).');
+      const ci = document.getElementById('compIn');
+      if (ci) ci.onchange = () => { const f = ci.files[0]; if (!f) return; if (f.size > 10 * 1024 * 1024) return EO.toast('El archivo supera los 10 MB.', 'alert-circle'); S.comprobante = f.name; save(); render(); EO.toast('Comprobante adjuntado.'); };
+    }
+    async function pay() {
+      let op = null;
+      if (S.metodo === 'tarjeta') {
+        try { op = await EO.webpay({ monto: hoyPagar(), glosa: t.titulo }); } catch (e) { EO.toast('Pago cancelado. Puedes intentarlo de nuevo.', 'info'); return; }
+      }
+      const ov = document.getElementById('payOverlay'); ov.classList.remove('hidden');
+      payTitle.textContent = op ? 'Pago aprobado' : 'Registrando tu transferencia…';
+      paySub.textContent = 'Creando tu solicitud y generando el borrador…';
+      setTimeout(() => {
+        const folio = EO.nextFolio();
+        const manual = !op;
+        S.folio = folio; S.pagadoFinal = manual ? 0 : hoyPagar(); S.step = 5; S.operacion = op;
+        EO.addSolicitud({
+          folio, tramite: t.id, cliente: S.v.razon || S.v.rep || ses.nombre, rut: S.v.rut || S.v.run || ses.run, contacto: S.v.rep || ses.nombre, run: S.v.run || ses.run,
+          email: S.v.email || ses.email, fono: S.v.fono || ses.fono || '', sucursal: S.v.sucursal || 'LF', estado: 'ingresado', modalidad: S.modo, total: total(), pagado: S.pagadoFinal,
+          metodo: manual ? 'Transferencia' : 'Tarjeta', pagoEstado: manual ? (S.comprobante ? 'por_validar' : 'pendiente') : 'confirmado',
+          pagos: [manual ? { monto: aPagar(), descuento: descHoy(), metodo: 'Transferencia', comprobante: S.comprobante || null, estado: S.comprobante ? 'por_validar' : 'pendiente', fecha: new Date().toISOString().slice(0, 10) }
+            : Object.assign({ monto: hoyPagar(), metodo: 'Tarjeta', estado: 'confirmado', fecha: new Date().toISOString().slice(0, 10) }, op)],
+          asignado: null, fecha: new Date().toISOString().slice(0, 10), prioridad: 'Media', propio: true, titularRun: ses.run, identidad: ses.identidad || 'verificada',
+          datos: S.v, docs: t.documentos.map((d, i) => ({ nombre: d[0], archivo: (S.docs[i] || {}).file || null, st: (S.docs[i] || {}).st })),
+        });
+        if (op) EO.audit('Pago confirmado', folio, `Webpay · tarjeta de ${op.tarjeta.toLowerCase()} •••• ${op.ultimos} · aut. ${op.autorizacion} · ${EO.clp(hoyPagar())}`, 'sys');
+        else if (S.comprobante) EO.audit('Comprobante de transferencia recibido', folio, `${S.comprobante} · ${EO.clp(aPagar())} (con 2% de descuento)`, 'sys');
+        save(); ov.classList.add('hidden'); render(); window.scrollTo(0, 0);
+      }, 1400);
+    }
+
+    /* ---------- Paso 5 ---------- */
+    function step5() {
+      const transf = S.metodo === 'transferencia';
+      return `<div class="card p-6 sm:p-10 text-center fade-in">
+          <span class="w-20 h-20 rounded-full bg-eo-mint grid place-items-center mx-auto"><span class="w-14 h-14 rounded-full bg-eo-green text-white grid place-items-center">${EO.icon(transf ? 'clock' : 'check', 'w-7 h-7')}</span></span>
+          <span class="pill-green mt-5 uppercase !text-[10px] tracking-wider">● ${transf ? 'Solicitud registrada' : 'Solicitud recibida'}</span>
+          <h1 class="mt-3 text-2xl sm:text-3xl font-semibold">${transf ? (S.comprobante ? '¡Listo! Estamos validando tu transferencia' : '¡Ya casi! Solo falta tu transferencia') : '¡Tu trámite ya está en marcha!'}</h1>
+          <p class="mt-2 text-eo-muted">${transf ? 'Usa el folio como asunto de la transferencia. Finanzas la validará y te avisaremos.' : 'Nuestro equipo recibirá tu solicitud en las próximas horas.'}</p>
+          ${transf ? `<div class="mt-6 text-left">${EO.datosBanco(S.folio)}</div>` : ''}
+          <div class="mt-7 rounded-2xl bg-eo-ink text-white px-6 py-5 flex items-center justify-between gap-4 text-left">
+            <div><p class="text-[11px] uppercase tracking-wider text-slate-400">Folio / orden</p><p id="folioTxt" class="font-display text-2xl font-extrabold tracking-wide">${S.folio}</p></div>
+            <button id="copy" class="btn btn-sm bg-white/10 hover:bg-white/15 text-white">${EO.icon('copy')} Copiar folio</button>
+          </div>
+          <div class="mt-7 text-left"><h2 class="font-semibold mb-3">Resumen de lo pagado</h2>
+            <div class="rounded-xl bg-eo-bg p-5 text-sm space-y-3">
+              <div class="flex justify-between gap-4"><span class="text-eo-muted">Trámite</span><span class="text-right">${t.titulo}</span></div>
+              <div class="flex justify-between border-t border-eo-line pt-3"><span class="text-eo-muted">Modalidad</span><span>${S.modo}% ${S.modo === 50 ? 'Abono' : 'Completo'}</span></div>
+              <div class="flex justify-between"><span class="text-eo-muted">Método</span><span>${S.metodo === 'transferencia' ? (S.comprobante ? 'Transferencia · comprobante en revisión' : 'Transferencia (pendiente)') : 'Tarjeta de ' + EO.esc(((S.operacion || {}).tarjeta || '').toLowerCase()) + ' •••• ' + EO.esc((S.operacion || {}).ultimos || '') + ' · aut. ' + EO.esc((S.operacion || {}).autorizacion || '')}</span></div>
+              <div class="flex justify-between items-end border-t border-eo-line pt-3"><span class="font-semibold">${transf ? 'Monto a transferir' : 'Total pagado'}</span><span class="font-display text-2xl text-eo-green">${EO.clp(transf ? aPagar() : S.pagadoFinal)} CLP</span></div>
+            </div></div>
+          <div class="mt-5 rounded-xl border border-blue-100 bg-blue-50/60 px-5 py-4 flex gap-3 text-left">${EO.icon('mail-check', 'w-5 h-5 text-eo-blue shrink-0')}
+            <div><p class="text-sm font-semibold">Enviamos una copia al correo registrado</p><p class="text-xs text-slate-600">${EO.esc(S.v.email || ses.email)} · Revisa también tu carpeta de spam.</p></div></div>
+        </div>
+        <div class="card p-6 mt-5"><h2 class="font-semibold mb-4">¿Qué ocurrirá ahora?</h2>
+          <div class="grid sm:grid-cols-3 gap-3">${[['Revisión legal', 'Un ejecutivo verifica tus datos, documentos y el borrador.'], [t.firma ? 'Firma electrónica' : 'Gestión', t.firma ? 'Te enviaremos el documento para firmar con FEA.' : 'Gestionamos el trámite ante el organismo.'], ['Entrega en ' + t.plazo, 'Recibes la documentación final en «Mis trámites».']].map(([n, d], i) => `
+            <div class="rounded-xl bg-eo-mint2 p-4"><span class="w-7 h-7 rounded-full bg-eo-green text-white text-xs font-bold grid place-items-center mb-3">${i + 1}</span><p class="text-sm font-semibold">${n}</p><p class="text-xs text-eo-muted mt-1">${d}</p></div>`).join('')}</div></div>`;
+    }
+
+    /* ---------- Render ---------- */
+    function render() {
+      document.getElementById('stepper').innerHTML = EO.stepper(S.step);
+      const m = document.getElementById('main');
+      m.innerHTML = [, step1, step2, step3, step4, step5][S.step]();
+      aside();
+      const wide = S.step === 2;
+      document.getElementById('layout').className = 'container-eo py-8 lg:py-10 grid gap-8 items-start ' + (wide ? 'xl:grid-cols-1 lg:grid-cols-[1fr_320px]' : 'lg:grid-cols-[1fr_320px]');
+      document.getElementById('aside').classList.toggle('xl:hidden', wide);
+      const back = document.getElementById('back'), next = document.getElementById('next');
+      back.classList.toggle('invisible', S.step <= 2 && !!ses || S.step === 1);
+      next.classList.toggle('hidden', S.step === 1);
+      if (S.step === 5) {
+        back.innerHTML = EO.icon('home') + ' Volver al inicio';
+        next.innerHTML = EO.icon('list-checks') + ' <span>Ver estado de mi trámite</span>';
+        back.classList.remove('invisible');
+        setBar('La copia fue enviada al correo registrado.');
+      } else {
+        back.innerHTML = EO.icon('arrow-left') + ' Atrás';
+        next.innerHTML = S.step === 4 ? (S.metodo === 'tarjeta' ? EO.icon('credit-card') + ' <span>Pagar con tarjeta</span>' : EO.icon('check') + ' <span>Confirmar solicitud</span>') : EO.icon('arrow-right') + ' <span>Continuar</span>';
+        if (S.step === 2) setBar('Tu avance se guarda automáticamente.');
+        if (S.step === 1) setBar('Tu sesión está protegida con cifrado TLS.');
+      }
+      if (S.step === 2) bind2();
+      if (S.step === 3) bind3();
+      if (S.step === 4) bind4();
+      const cp = document.getElementById('copy');
+      if (cp) cp.onclick = () => { navigator.clipboard?.writeText(S.folio); EO.toast('Folio copiado.'); };
+      EO.refreshIcons();
+    }
+    document.getElementById('next').onclick = () => {
+      if (S.step === 2 && !check2()) return;
+      if (S.step === 3 && !check3()) return;
+      if (S.step === 4) return pay();
+      if (S.step === 5) { const f = S.folio; EO.store.del(KEY); location.href = 'estado.html?folio=' + f; return; }
+      S.step++; save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    document.getElementById('back').onclick = () => {
+      if (S.step === 5) { EO.store.del(KEY); location.href = 'index.html'; return; }
+      if (S.step > 2) { S.step--; save(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    };
+    render();
+    Object.keys(S.docs).forEach(i => { if (S.docs[i].st === 'validando') simulate(+i); });
+  </script>
+</body>
+</html>

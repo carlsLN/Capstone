@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estado del trámite · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+  <script src="../assets/jspdf.min.js"></script>
+  <script src="../assets/pdf.js"></script>
+  <script src="../assets/forms.js"></script>
+</head>
+<body class="bg-eo-bg min-h-screen flex flex-col">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="header"></div>
+  <div class="bg-white border-b border-eo-line">
+    <div class="container-eo py-3 text-xs text-eo-muted flex items-center gap-2"><a href="index.html" class="hover:text-eo-green">Inicio</a> / <a href="mis-tramites.html" class="hover:text-eo-green">Mis trámites</a> / <span id="bc" class="text-eo-ink font-semibold"></span></div>
+  </div>
+  <main class="flex-1 container-eo max-w-6xl py-10 w-full" id="main"></main>
+  <div id="footer"></div>
+
+  <!-- Modal firma -->
+  <div id="signModal" class="hidden fixed inset-0 z-50 bg-eo-ink/60 backdrop-blur-sm grid place-items-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden fade-in">
+      <div class="px-6 py-4 border-b border-eo-line flex items-center justify-between">
+        <div><p class="font-semibold flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 text-eo-green"></i> Firma Electrónica Avanzada</p><p class="text-xs text-eo-muted">Proveedor de firma en modo de prueba · Ley 19.799</p></div>
+        <button onclick="signModal.classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="grid md:grid-cols-[1.3fr_1fr] flex-1 min-h-0">
+        <div id="signDoc" class="doc-preview p-6 text-[12px] leading-relaxed text-slate-700 space-y-3 overflow-y-auto scroll-thin bg-eo-bg"></div>
+        <div class="p-6 border-t md:border-t-0 md:border-l border-eo-line flex flex-col">
+          <ol class="space-y-4 text-sm flex-1">
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-eo-green text-white text-xs grid place-items-center shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></span><span>Identidad verificada con código a tu correo y celular</span></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-eo-green text-white text-xs grid place-items-center shrink-0">2</span><span>Lee el documento y acepta su contenido
+              <label class="mt-2 flex gap-2 text-xs text-eo-muted"><input id="acepto" type="checkbox" class="accent-eo-green mt-0.5"> He leído y acepto el documento.</label></span></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-eo-green text-white text-xs grid place-items-center shrink-0">3</span><span class="flex-1">Ingresa el código de 6 dígitos enviado a tu correo
+              <input id="otp" maxlength="6" inputmode="numeric" class="input mt-2 tracking-[.5em] text-center font-semibold" placeholder="••••••">
+              <button onclick="EO.toast('Código reenviado. Para la demo usa 123456.','mail')" class="text-xs font-semibold text-eo-green mt-2">Reenviar código</button></span></li>
+          </ol>
+          <button id="signBtn" class="btn-primary w-full mt-6"><i data-lucide="pen-tool" class="w-4 h-4"></i> Firmar documento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="payOverlay" class="hidden fixed inset-0 z-50 bg-eo-ink/70 backdrop-blur-sm grid place-items-center p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center"><div class="w-14 h-14 mx-auto mb-4 rounded-full border-4 border-eo-mint border-t-eo-green animate-spin"></div><p class="font-bold">Registrando tu pago…</p><p class="text-sm text-eo-muted mt-1">Demo · sin cargo real</p></div>
+  </div>
+
+  <script>
+    EO.mountPortal('mis');
+    const folio = EO.param('folio') || 'EO-2026-000482';
+    const main = document.getElementById('main');
+    function render() {
+      const s = EO.solicitud(folio);
+      if (!s) { main.innerHTML = `<div class="card p-10 text-center max-w-md mx-auto"><h1 class="font-bold text-lg">No encontramos el folio ${EO.esc(folio)}</h1><a href="mis-tramites.html" class="btn-primary btn-sm mt-5">Ir a mis trámites</a></div>`; return; }
+      const t = EO.tramite(s.tramite), total = s.total || t.precio, saldo = total - s.pagado;
+      const ej = EO.usuario(s.asignado), suc = EO_DATA.sucursales.find(x => x.id === s.sucursal);
+      const order = ['ingresado', 'validacion', 'notaria', 'firma', 'completado'];
+      let idx = order.indexOf(s.estado);
+      if (s.firmado && idx === 3) idx = 3.5;
+      const [lbl, cls] = EO.estadoCliente[s.estado];
+      const pe = s.pagoEstado || (s.pagado ? 'confirmado' : 'pendiente');
+      const porPagar = s.pagado ? Math.max(0, saldo) : Math.round(total * s.modalidad / 100);
+      const descT = EO.descTransf(porPagar), conDesc = porPagar - descT; // transferencia: 2% de descuento
+      const ultimoPago = (s.pagos || []).slice(-1)[0];
+      const esperando = ultimoPago && ultimoPago.estado === 'por_validar';
+      document.getElementById('bc').textContent = s.folio;
+      document.title = s.folio + ' · Estado del trámite · Easy Office';
+
+      const steps = [
+        ['Solicitud recibida', 'Ticket creado automáticamente en nuestro sistema.', 0, 'inbox'],
+        [s.pagado ? `Pago ${s.modalidad === 50 && s.pagado < total ? 'de abono' : 'total'} confirmado` : pe === 'por_validar' ? 'Validando tu transferencia' : pe === 'rechazado' ? 'Transferencia rechazada' : 'Esperando tu transferencia',
+          s.pagado ? `${EO.clp(s.pagado)} vía ${s.metodo}${s.metodo === 'Tarjeta' ? ', confirmado al instante' : ', validado por Finanzas'}.` : pe === 'por_validar' ? 'Recibimos tu comprobante. Finanzas lo revisa en menos de 24 h hábiles.' : pe === 'rechazado' ? EO.esc(s.pagoNota || 'No pudimos validar el comprobante. Súbelo de nuevo o transfiere en línea.') : 'Transfiere con los datos de abajo y sube el comprobante.', s.pagado ? 0 : 0.5, 'landmark'],
+        ['Revisión de antecedentes', ej ? `Asignado a ${ej.nombre}. Validación de datos y documentos.` : 'Pronto te asignaremos un ejecutivo.', 1, 'search-check'],
+        [t.categoria === 'documental' ? 'Revisión legal del borrador' : 'Gestión ante SII / notaría', 'Presentación y seguimiento ante el organismo.', 2, 'landmark'],
+        ['Firma electrónica avanzada', s.firmado ? 'Documento firmado correctamente.' : 'Te avisaremos cuando el documento esté listo para firmar.', 3, 'pen-tool'],
+        ['Trámite completado', 'Documentación final disponible para descarga.', 4, 'package-check'],
+      ];
+      const stateOf = (k) => k < idx || (k === 0) ? 'done' : (k === idx || (k === 3 && idx === 3.5) ? 'cur' : 'todo');
+
+      const actions = [];
+      if (s.estado === 'firma' && !s.firmado) actions.push(['pen-tool', 'Tu documento está listo para firmar', 'Revísalo y fírmalo con firma electrónica avanzada. Toma menos de 2 minutos.', '<button id="goSign" class="btn-primary btn-sm">Firmar ahora</button>']);
+      if (s.estado === 'completado') actions.push(['package-check', 'Tu trámite está completado', 'Descarga el documento final en PDF.', '<button id="dlFinal" class="btn-primary btn-sm">' + EO.icon('download', 'w-4 h-4') + ' Descargar PDF</button>']);
+      if (porPagar > 0 && !esperando) actions.push(['wallet', s.pagado ? `Saldo pendiente de ${EO.clp(porPagar)}` : `Paga ${EO.clp(porPagar)} para comenzar`, (s.pagado ? 'Págalo antes de la entrega final. ' : '') + `Paga con tarjeta, o transfiere ${EO.clp(conDesc)} (2% de descuento) y sube el comprobante.`,
+        `<div class="flex flex-wrap gap-2"><button id="goPay" class="btn-dark btn-sm">${EO.icon('credit-card', 'w-4 h-4')} Pagar con tarjeta</button><label class="btn-outline btn-sm cursor-pointer">${EO.icon('upload', 'w-4 h-4')} Subir comprobante<input type="file" id="compUp" class="sr-only" accept=".pdf,.jpg,.jpeg,.png"></label><button id="verBanco" class="btn-ghost btn-sm">Ver datos bancarios</button></div>`]);
+      if (esperando) actions.push(['clock', 'Estamos validando tu transferencia', `Comprobante «${EO.esc(ultimoPago.comprobante)}» por ${EO.clp(ultimoPago.monto)}. Te avisaremos cuando Finanzas lo confirme.`, '']);
+      (s.docs || []).forEach((d, i) => { if (d.st === 'despues') actions.push(['upload', `Falta: ${d.nombre}`, 'El ejecutivo no podrá avanzar hasta que lo subas.', `<label class="btn-outline btn-sm cursor-pointer">Subir archivo<input type="file" class="sr-only" data-up="${i}" accept=".pdf,.jpg,.jpeg,.png"></label>`]); });
+
+      const docs = [
+        ['file-text', 'Borrador del documento', 'PDF · generado automáticamente', true, 'borrador'],
+        ['receipt', 'Comprobante de pago', s.pagado ? `PDF · ${s.metodo} · ${EO.clp(s.pagado)}` : 'Disponible al confirmar el pago', s.pagado > 0, 'comprobante'],
+        ['file-signature', 'Documento firmado (FEA)', s.firmado || s.estado === 'completado' ? 'PDF · firmado por todas las partes' : 'Disponible después de la firma', s.firmado || s.estado === 'completado', 'final'],
+        ['file-badge', 'Factura electrónica', saldo <= 0 ? 'Emitida a ' + s.rut : 'Se emite al completar el pago', saldo <= 0, 'factura'],
+        ['award', 'Certificado / documento final', s.estado === 'completado' ? 'PDF · listo para descargar' : 'Al completar el trámite', s.estado === 'completado', 'final'],
+      ];
+
+      main.innerHTML = `
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div><a href="mis-tramites.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-eo-muted hover:text-eo-green mb-3">${EO.icon('arrow-left', 'w-3.5 h-3.5')} Volver a mis trámites</a>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">${t.titulo}</h1>
+            <p class="text-sm text-eo-muted mt-1">${s.folio} · ${EO.esc(s.cliente)} · ingresado el ${s.fecha}</p></div>
+          <span class="${cls} !text-sm !px-3.5 !py-1.5">● ${s.firmado && s.estado === 'firma' ? 'Firmado · pendiente de pago' : lbl}</span>
+        </div>
+
+        ${actions.map(([ic, ti, d, btn]) => `<div class="card border-eo-border bg-eo-mint2 p-5 mb-4 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <p class="flex gap-3"><span class="w-10 h-10 rounded-xl bg-eo-green text-white grid place-items-center shrink-0">${EO.icon(ic, 'w-5 h-5')}</span><span><b class="block">${ti}</b><span class="text-sm text-eo-muted">${d}</span></span></p>${btn}</div>`).join('')}
+        <div id="bancoBox" class="hidden mb-4 max-w-md"><p class="text-xs font-semibold mb-2">Transfiere ${EO.clp(conDesc)} <span class="font-normal text-eo-muted">(${EO.clp(porPagar)} con 2% de descuento)</span></p>${EO.datosBanco(s.folio)}</div>
+
+        <div class="grid lg:grid-cols-[1fr_340px] gap-6 items-start mt-6">
+          <section class="card p-6 sm:p-8">
+            <h2 class="font-semibold mb-6">Seguimiento</h2>
+            <ol class="relative">${steps.map(([n, d, k, ic], i) => {
+              const st = i === 1 && !s.pagado ? 'cur' : i === 4 && s.firmado ? 'done' : stateOf(k);
+              return `<li class="relative pl-12 pb-8 last:pb-0">
+                ${i < steps.length - 1 ? `<span class="absolute left-[17px] top-9 bottom-0 w-0.5 ${st === 'done' ? 'bg-eo-green' : 'bg-eo-line'}"></span>` : ''}
+                <span class="absolute left-0 top-0 w-9 h-9 rounded-full grid place-items-center ${st === 'done' ? 'bg-eo-green text-white' : st === 'cur' ? 'bg-white border-2 border-eo-green text-eo-green ring-4 ring-eo-mint' : 'bg-eo-bg text-slate-400 border border-eo-line'}">${EO.icon(st === 'done' ? 'check' : ic, 'w-4 h-4')}</span>
+                <p class="font-semibold text-sm ${st === 'todo' ? 'text-slate-400' : ''}">${n} ${st === 'cur' ? '<span class="pill-green ml-1 !text-[10px]">En curso</span>' : ''}</p>
+                <p class="text-xs text-eo-muted mt-1">${d}</p></li>`;
+            }).join('')}</ol>
+          </section>
+
+          <div class="space-y-5">
+            <section class="card p-5">
+              <h3 class="font-semibold mb-4">Detalle</h3>
+              <dl class="text-sm space-y-3">
+                <div class="flex justify-between gap-3"><dt class="text-eo-muted">Sucursal</dt><dd class="text-right">${suc.comuna}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-eo-muted">Modalidad</dt><dd>${s.modalidad}% ${s.modalidad === 50 ? 'abono' : 'completo'}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-eo-muted">Costo total</dt><dd>${EO.clp(total)}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-eo-muted">Pagado</dt><dd class="text-eo-green font-semibold">${EO.clp(s.pagado)}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-eo-muted">Saldo</dt><dd class="${saldo > 0 ? 'text-eo-amber font-semibold' : ''}">${EO.clp(Math.max(0, saldo))}</dd></div>
+                <div class="flex justify-between gap-3 pt-3 border-t border-eo-line"><dt class="text-eo-muted">Ejecutivo</dt><dd class="flex items-center gap-2">${ej ? `<span class="w-6 h-6 rounded-full bg-eo-ink text-white text-[10px] font-bold grid place-items-center">${ej.iniciales}</span> ${ej.nombre}` : 'Por asignar'}</dd></div>
+              </dl>
+            </section>
+            <section class="card p-5">
+              <h3 class="font-semibold mb-1">Mis documentos</h3><p class="text-xs text-eo-muted mb-4">Repositorio seguro de tu trámite.</p>
+              <ul class="space-y-2">${docs.map(([ic, n, d, ok, tipo]) => `<li class="flex items-center gap-3 rounded-xl px-3 py-2.5 ${ok ? 'bg-eo-bg' : 'opacity-50'}">
+                <span class="w-8 h-8 rounded-lg bg-white grid place-items-center text-eo-green shrink-0">${EO.icon(ic, 'w-4 h-4')}</span>
+                <span class="flex-1 min-w-0"><span class="block text-sm truncate">${n}</span><span class="block text-[11px] text-eo-muted truncate">${d}</span></span>
+                ${ok ? `<button class="dl p-1.5 rounded-md hover:bg-white text-eo-green" data-n="${n}" data-tipo="${tipo}" aria-label="Descargar">${EO.icon('download', 'w-4 h-4')}</button>` : EO.icon('lock', 'w-4 h-4 text-slate-400')}</li>`).join('')}</ul>
+            </section>
+            <section class="card p-5">
+              <h3 class="font-semibold mb-4">Notificaciones enviadas</h3>
+              <ul class="space-y-3 text-xs">
+                ${s.estado === 'firma' ? `<li class="flex gap-2.5">${EO.icon('message-circle', 'w-4 h-4 text-eo-green shrink-0')}<span><b>WhatsApp</b> · Tu documento está listo para firmar.<br><span class="text-eo-muted">Hoy, 08:43</span></span></li>` : ''}
+                ${ej ? `<li class="flex gap-2.5">${EO.icon('mail', 'w-4 h-4 text-eo-green shrink-0')}<span><b>Correo</b> · ${ej.nombre} tomó tu trámite.<br><span class="text-eo-muted">${s.fecha}</span></span></li>` : ''}
+                <li class="flex gap-2.5">${EO.icon('mail', 'w-4 h-4 text-eo-green shrink-0')}<span><b>Correo</b> · Recibimos tu solicitud ${s.folio}.<br><span class="text-eo-muted">${s.fecha}</span></span></li>
+              </ul>
+            </section>
+          </div>
+        </div>`;
+
+      document.getElementById('goSign')?.addEventListener('click', () => {
+        document.getElementById('signDoc').innerHTML = EO_FORMS.render(t.form, Object.assign({ razon: s.cliente, rut: s.rut, rep: s.contacto, run: s.run, email: s.email, fono: s.fono, sucursal: s.sucursal, duracion: '12 meses' }, s.datos || {}), t);
+        signModal.classList.remove('hidden');
+      });
+      const registrarPago = (p) => {
+        const pagos = (s.pagos || []).concat([Object.assign({ fecha: new Date().toISOString().slice(0, 10) }, p)]);
+        const patch = { pagos };
+        if (p.estado === 'confirmado') {
+          patch.pagado = s.pagado + EO.abono(p); patch.metodo = p.metodo; patch.pagoEstado = 'confirmado';
+          if (s.firmado && patch.pagado >= total) patch.estado = 'completado';
+        } else patch.pagoEstado = 'por_validar';
+        EO.updateSolicitud(folio, patch);
+      };
+      document.getElementById('goPay')?.addEventListener('click', async () => {
+        let op; try { op = await EO.webpay({ monto: porPagar, glosa: `${t.titulo} · ${s.folio}` }); } catch (e) { return EO.toast('Pago cancelado.', 'info'); }
+        registrarPago(Object.assign({ monto: porPagar, metodo: 'Tarjeta', estado: 'confirmado' }, op));
+        EO.audit('Pago confirmado', folio, `Webpay · tarjeta de ${op.tarjeta.toLowerCase()} •••• ${op.ultimos} · aut. ${op.autorizacion} · ${EO.clp(porPagar)}`, 'sys');
+        EO.toast('Pago aprobado. ¡Gracias!'); render();
+      });
+      document.getElementById('compUp')?.addEventListener('change', (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        if (f.size > 10 * 1024 * 1024) return EO.toast('El archivo supera los 10 MB.', 'alert-circle');
+        registrarPago({ monto: conDesc, descuento: descT, metodo: 'Transferencia', comprobante: f.name, estado: 'por_validar' });
+        EO.audit('Comprobante de transferencia recibido', folio, `${f.name} · ${EO.clp(conDesc)} (con 2% de descuento)`, 'sys');
+        EO.toast('Comprobante recibido. Finanzas lo validará.'); render();
+      });
+      document.getElementById('verBanco')?.addEventListener('click', () => bancoBox.classList.toggle('hidden'));
+      document.getElementById('dlFinal')?.addEventListener('click', () => EO_PDF.documento(s, t, true));
+      main.querySelectorAll('[data-up]').forEach(inp => inp.onchange = () => {
+        const docsArr = (s.docs || []).slice(); docsArr[+inp.dataset.up] = Object.assign({}, docsArr[+inp.dataset.up], { st: 'cargado', archivo: inp.files[0].name });
+        EO.updateSolicitud(folio, { docs: docsArr }); EO.toast('Documento recibido. Lo validaremos en minutos.'); render();
+      });
+      main.querySelectorAll('.dl').forEach(b => b.onclick = () => {
+        const tp = b.dataset.tipo;
+        if (tp === 'borrador') EO_PDF.documento(s, t, false);
+        else if (tp === 'final') EO_PDF.documento(s, t, true);
+        else if (tp === 'comprobante') EO_PDF.comprobante(s, t);
+        else EO.toast('La factura electrónica la emite el SII y llega a tu correo.', 'mail');
+      });
+      EO.refreshIcons();
+    }
+
+    document.getElementById('signBtn').onclick = () => {
+      if (!acepto.checked) return EO.toast('Debes aceptar el contenido del documento.', 'alert-circle');
+      if (!/^\d{6}$/.test(otp.value)) return EO.toast('Ingresa el código de 6 dígitos (demo: 123456).', 'alert-circle');
+      const s = EO.solicitud(folio), total = s.total || EO.tramite(s.tramite).precio;
+      EO.updateSolicitud(folio, s.pagado >= total ? { firmado: true, estado: 'completado' } : { firmado: true });
+      signModal.classList.add('hidden'); EO.toast('Documento firmado con FEA.'); render();
+    };
+    render();
+  </script>
+</body>
+</html>

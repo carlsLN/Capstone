@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle del trámite · Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-white">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <div id="header"></div>
+
+  <section class="bg-white border-b border-eo-line">
+    <div class="container-eo py-10">
+      <nav class="text-xs text-eo-muted flex items-center gap-2 mb-5">
+        <a href="index.html" class="hover:text-eo-green">Inicio</a><span>/</span>
+        <a id="bcCat" href="catalogo.html" class="text-eo-green"></a><span>/</span>
+        <span id="bcTit" class="text-eo-ink"></span>
+      </nav>
+      <div class="flex flex-wrap gap-2 mb-4" id="pills"></div>
+      <h1 id="titulo" class="text-3xl sm:text-4xl font-bold tracking-tight"></h1>
+      <p id="resumen" class="mt-3 text-eo-muted max-w-3xl"></p>
+    </div>
+  </section>
+
+  <main class="bg-eo-bg">
+    <div class="container-eo py-12 grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+      <div class="space-y-10 min-w-0">
+        <section>
+          <h2 class="text-xl font-bold mb-3">Descripción del trámite</h2>
+          <p id="desc" class="text-sm text-slate-600 leading-relaxed"></p>
+        </section>
+
+        <section>
+          <h2 class="text-xl font-bold mb-4">Requisitos</h2>
+          <div id="reqs" class="space-y-3"></div>
+        </section>
+
+        <section class="card p-6 sm:p-8">
+          <h2 class="text-xl font-bold mb-4">¿Qué incluye este servicio?</h2>
+          <ul id="incluye" class="grid sm:grid-cols-2 gap-3 text-sm"></ul>
+        </section>
+
+        <section>
+          <h2 class="text-xl font-bold mb-6">Paso a paso del trámite</h2>
+          <ol id="pasos" class="relative border-l-2 border-eo-border ml-4 space-y-7"></ol>
+        </section>
+
+        <section>
+          <h2 class="text-xl font-bold mb-4">Preguntas frecuentes</h2>
+          <div id="faq" class="space-y-3"></div>
+        </section>
+      </div>
+
+      <!-- ASIDE PRECIO -->
+      <aside class="lg:sticky lg:top-24 card p-6 shadow-lift">
+        <p class="text-[10px] font-semibold uppercase tracking-wider text-eo-muted" id="tarifaLbl">Tarifa regular</p>
+        <p class="mt-1"><span id="precio" class="font-display text-4xl font-extrabold"></span> <span class="text-sm text-eo-muted">CLP <span id="ciclo"></span></span></p>
+        <div class="my-5 border-t border-eo-line"></div>
+        <p class="text-xs font-semibold mb-2">Modalidad de pago</p>
+        <div class="grid grid-cols-2 gap-1 rounded-xl bg-eo-bg p-1 text-sm" id="modo">
+          <button data-m="50" class="rounded-lg py-2 font-semibold">50% Abono</button>
+          <button data-m="100" class="rounded-lg py-2 font-semibold">100% Completo</button>
+        </div>
+        <div class="mt-4 rounded-xl bg-eo-mint px-4 py-3 flex justify-between items-center">
+          <span class="text-xs text-eo-green font-semibold">Pagas hoy</span><span id="hoy" class="font-display text-xl font-extrabold text-eo-green"></span>
+        </div>
+        <p id="saldo" class="text-[11px] text-eo-muted mt-2"></p>
+        <a id="cta" class="btn-primary w-full mt-5">Iniciar trámite en línea <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+        <div class="mt-5 rounded-xl bg-eo-bg p-4 space-y-3 text-xs text-slate-600">
+          <p class="flex gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-eo-green shrink-0"></i><span>Firma Electrónica Avanzada con validez legal bajo la <b>Ley 19.799</b>.</span></p>
+          <p class="flex gap-2"><i data-lucide="id-card" class="w-4 h-4 text-eo-green shrink-0"></i><span>Cuenta verificada con código a tu correo y celular.</span></p>
+          <p class="flex gap-2"><i data-lucide="lock" class="w-4 h-4 text-eo-green shrink-0"></i><span>Paga con tarjeta, o por transferencia con 2% de descuento.</span></p>
+        </div>
+        <a href="https://wa.me/56222777781" target="_blank" rel="noopener" class="btn-ghost w-full mt-3"><i data-lucide="message-circle" class="w-4 h-4"></i> Hablar con un ejecutivo</a>
+      </aside>
+    </div>
+
+    <section class="border-t border-eo-line bg-white">
+      <div class="container-eo py-14">
+        <span class="eyebrow">Líneas de negocio</span>
+        <h2 class="mt-2 text-2xl sm:text-3xl font-bold tracking-tight mb-8">Otros trámites que te pueden servir</h2>
+        <div id="otros" class="grid md:grid-cols-3 gap-5"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script>
+    EO.mountPortal('catalogo');
+    const t = EO.tramite(EO.param('id')) || EO.tramite('inicio-actividades');
+    const c = EO.categoria(t.categoria);
+    document.title = t.titulo + ' · Easy Office';
+    let modo = 50;
+
+    bcCat.textContent = c.nombre; bcCat.href = 'catalogo.html?cat=' + c.id; bcTit.textContent = t.titulo;
+    titulo.textContent = t.titulo; resumen.textContent = t.resumen;
+    pills.innerHTML = `<span class="pill-green uppercase !text-[10px] tracking-wide">${c.nombre}</span>
+      <span class="pill-gray">${EO.icon('clock', 'w-3.5 h-3.5')} ${t.plazo}</span>
+      <span class="pill-gray">${EO.icon('globe', 'w-3.5 h-3.5')} ${t.tipo}</span>
+      ${t.firma ? `<span class="pill-gray">${EO.icon('pen-tool', 'w-3.5 h-3.5')} Con firma electrónica</span>` : ''}`;
+    desc.textContent = `${t.resumen} ${c.desc} Todo el proceso se realiza en línea: completas tus datos una sola vez, generamos el borrador automáticamente y un ejecutivo lo revisa antes de enviarlo a firma. Puedes seguir cada etapa desde "Mis trámites".`;
+    reqs.innerHTML = t.requisitos.map(([n, d], i) => `
+      <div class="card !shadow-none p-4 flex gap-4 items-start">
+        <span class="w-10 h-10 rounded-xl bg-eo-mint text-eo-green grid place-items-center shrink-0">${EO.icon(['file-text', 'key-round', 'id-card', 'building-2'][i % 4], 'w-5 h-5')}</span>
+        <div><p class="font-semibold text-sm">${n}</p><p class="text-xs text-eo-muted mt-0.5">${d}</p></div>
+      </div>`).join('');
+    incluye.innerHTML = t.incluye.map(i => `<li class="flex gap-2.5">${EO.icon('circle-check', 'w-5 h-5 text-eo-green shrink-0')}<span>${i}</span></li>`).join('');
+    const pasos = [
+      ['user-round-check', 'Ingresa o crea tu cuenta', 'Tu cuenta se verifica con tu cédula y precargamos tus datos personales.'],
+      ['clipboard-pen', 'Completa los datos y revisa el borrador', 'El documento se genera en vivo mientras completas el formulario.'],
+      ['upload', 'Adjunta los documentos requeridos', 'Validamos formato y legibilidad automáticamente.'],
+      ['credit-card', 'Paga con tarjeta o transferencia', 'Débito o crédito en línea, o transferencia con 2% de descuento. Abono del 50% o pago total.'],
+      ['pen-tool', t.firma ? 'Firma electrónica avanzada' : 'Revisión del equipo', t.firma ? 'Te avisamos por correo cuando el documento esté listo para firmar.' : 'Un ejecutivo revisa y gestiona tu solicitud.'],
+      ['package-check', 'Recibe tu documentación', `En un plazo de ${t.plazo} tendrás todo disponible en "Mis trámites".`],
+    ];
+    document.getElementById('pasos').innerHTML = pasos.map(([ic, n, d], i) => `
+      <li class="pl-8 relative"><span class="absolute -left-[15px] top-0 w-7 h-7 rounded-full bg-eo-green text-white text-xs font-bold grid place-items-center ring-4 ring-eo-bg">${i + 1}</span>
+      <p class="font-semibold text-sm flex items-center gap-2">${EO.icon(ic, 'w-4 h-4 text-eo-green')} ${n}</p><p class="text-xs text-eo-muted mt-1">${d}</p></li>`).join('');
+    const faqs = [
+      ['¿Cuánto demora el trámite?', `El plazo garantizado es de ${t.plazo} desde que el pago y los documentos están validados.`],
+      ['¿Necesito ir presencialmente?', 'No. Todo se realiza en línea, incluida la firma electrónica.'],
+      ['¿Qué pasa si un documento es rechazado?', 'Te avisamos por correo y WhatsApp con el motivo, y puedes reemplazarlo desde "Mis trámites" sin perder tu avance.'],
+      ['¿Puedo pagar el saldo después?', 'Sí. Si eliges abono del 50%, pagas el saldo desde tu cuenta antes de la entrega final.'],
+    ];
+    faq.innerHTML = faqs.map(([q, a]) => `<details class="group bg-white rounded-xl border border-eo-line">
+      <summary class="flex items-center justify-between cursor-pointer list-none px-5 py-4 text-sm font-semibold">${q}${EO.icon('chevron-down', 'w-4 h-4 text-slate-400 transition group-open:rotate-180')}</summary>
+      <p class="px-5 pb-4 text-sm text-eo-muted">${a}</p></details>`).join('');
+    otros.innerHTML = EO_DATA.tramites.filter(x => x.id !== t.id && x.categoria === t.categoria).concat(EO_DATA.tramites.filter(x => x.categoria !== t.categoria && x.popular)).slice(0, 3).map(EO.tramiteCard).join('');
+
+    precio.textContent = EO.clp(t.precio); ciclo.textContent = EO.cicloTxt(t.ciclo);
+    tarifaLbl.textContent = t.ciclo === 'único' ? 'Tarifa regular única' : 'Tarifa regular ' + t.ciclo;
+    function setModo(m) {
+      modo = m;
+      document.querySelectorAll('#modo button').forEach(b => b.className = 'rounded-lg py-2 font-semibold transition ' + (+b.dataset.m === m ? 'bg-white shadow-sm text-eo-ink' : 'text-slate-500'));
+      hoy.textContent = EO.clp(t.precio * m / 100);
+      saldo.textContent = m === 50 ? `Saldo de ${EO.clp(t.precio / 2)} antes de la entrega final.` : 'Trámite completamente pagado desde el inicio.';
+      cta.href = `contratar.html?id=${t.id}&modo=${m}`;
+    }
+    document.querySelectorAll('#modo button').forEach(b => b.onclick = () => setModo(+b.dataset.m));
+    setModo(50);
+    EO.refreshIcons();
+  </script>
+</body>
+</html>

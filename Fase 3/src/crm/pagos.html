@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pagos · CRM Easy Office</title>
+  <link rel="icon" type="image/png" href="../assets/img/marca-claro.png">
+  <link rel="stylesheet" href="../assets/eo.css">
+  <script src="../assets/lucide.min.js"></script>
+  <script src="../assets/data.js"></script>
+  <script src="../assets/nube.js"></script>
+  <script src="../assets/eo.js"></script>
+</head>
+<body class="bg-eo-bg">
+  <div class="eo-warn" style="display:block;font:16px/1.55 system-ui,sans-serif;background:#FFF4E5;color:#7A3E00;padding:18px 22px;border-bottom:1px solid #F3C58B"><b>Esta página se abrió sin sus estilos.</b> Probablemente la abriste directo desde el archivo .zip. Primero descomprímelo (clic derecho sobre el .zip → «Extraer todo…»), y luego abre <b>index.html</b> desde la carpeta extraída.</div>
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-eo-ink -translate-x-full lg:translate-x-0 transition-transform"></aside>
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    <div id="topbar" class="sticky top-0 z-30"></div>
+    <main id="main" class="flex-1 p-4 sm:p-8 min-w-0"></main>
+  </div>
+
+  <script>
+    EO.mountCrm('pagos', 'Pagos y conciliación', 'Los pagos con tarjeta (Webpay) se confirman solos; las transferencias las valida Finanzas');
+    const main = document.getElementById('main');
+    let filtro = 'todos';
+    const total = s => s.total || EO.tramite(s.tramite).precio;
+
+    function movimientos() {
+      const rows = [];
+      EO.solicitudes().forEach(s => {
+        const pagos = s.pagos || [];
+        if (pagos.length) {
+          pagos.forEach((p, i) => {
+            const conf = p.estado === 'confirmado';
+            rows.push({ s, i, fecha: p.fecha || s.fecha, metodo: p.metodo, concepto: i === 0 ? (s.modalidad === 50 ? 'Abono 50%' : 'Pago total') : 'Saldo 50%', monto: p.monto, desc: p.descuento || 0,
+              estado: conf ? (p.metodo === 'Tarjeta' || p.metodo === 'Fintoc' ? 'auto' : 'manual') : p.estado === 'por_validar' ? 'validar' : p.estado === 'rechazado' ? 'rechazado' : 'pendiente',
+              ref: p.metodo === 'Tarjeta' ? `${p.tarjeta} •••• ${p.ultimos} · aut. ${p.autorizacion}` : p.operacion ? `${p.banco} · op. ${p.operacion}` : p.comprobante ? p.comprobante : 'Asunto: ' + s.folio });
+          });
+          const enCurso = pagos.some(p => p.estado === 'por_validar' || p.estado === 'pendiente');
+          if (!enCurso && s.pagado > 0 && s.pagado < total(s)) rows.push({ s, fecha: s.fecha, metodo: '—', concepto: 'Saldo 50%', monto: total(s) - s.pagado, estado: 'saldo', ref: '—' });
+          return;
+        }
+        // trámites anteriores, sin detalle de pagos
+        const auto = s.metodo === 'Tarjeta' || s.metodo === 'Fintoc';
+        if (s.pagado > 0) rows.push({ s, fecha: s.fecha, metodo: s.metodo, concepto: s.modalidad === 50 && s.pagado < total(s) ? 'Abono 50%' : 'Pago total', monto: s.pagado, estado: auto ? 'auto' : 'manual', ref: auto ? 'aut. ' + s.folio.slice(-6) : 'BE-' + s.folio.slice(-6) });
+        if (s.pagado <= 0) rows.push({ s, fecha: s.fecha, metodo: 'Transferencia', concepto: s.modalidad === 50 ? 'Abono 50%' : 'Pago total', monto: total(s) * s.modalidad / 100, estado: 'pendiente', ref: 'Asunto: ' + s.folio });
+        else if (s.pagado < total(s)) rows.push({ s, fecha: s.fecha, metodo: '—', concepto: 'Saldo 50%', monto: total(s) - s.pagado, estado: 'saldo', ref: '—' });
+      });
+      return rows.sort((a, b) => (b.estado === 'validar') - (a.estado === 'validar') || String(b.fecha).localeCompare(String(a.fecha)));
+    }
+    // registra el pago en la solicitud y la completa si ya estaba firmada
+    function confirmar(s, idx, monto, ref) {
+      const pagos = (s.pagos || []).slice();
+      // las transferencias llevan 2% de descuento: al trámite se abona lo transferido más el descuento
+      let abono = monto;
+      if (idx != null && pagos[idx]) { pagos[idx] = Object.assign({}, pagos[idx], { estado: 'confirmado', validadoPor: EO.crmUser() }); abono = EO.abono(pagos[idx]); }
+      else { const d = EO.descTransf(monto); pagos.push({ monto: monto - d, descuento: d, metodo: 'Transferencia', comprobante: ref, estado: 'confirmado', fecha: new Date().toISOString().slice(0, 10), validadoPor: EO.crmUser() }); }
+      const pagado = s.pagado + abono, patch = { pagos, pagado, pagoEstado: 'confirmado', metodo: 'Transferencia' };
+      if (s.firmado && pagado >= total(s)) patch.estado = 'completado';
+      EO.updateSolicitud(s.folio, patch);
+    }
+    function render() {
+      if (!EO.can('ver_pagos')) return EO.denied(main, 'ver_pagos');
+      const all = movimientos();
+      const rec = all.filter(r => r.estado === 'auto' || r.estado === 'manual');
+      const sum = a => a.reduce((x, r) => x + r.monto, 0);
+      const L = all.filter(r => filtro === 'todos' || (filtro === 'validar' ? r.estado === 'validar' : filtro === 'pendiente' ? r.estado === 'pendiente' || r.estado === 'rechazado' : filtro === 'saldo' ? r.estado === 'saldo' : r.estado === 'auto' || r.estado === 'manual'));
+      const pill = { auto: '<span class="pill-green">● Confirmado (Webpay)</span>', manual: '<span class="pill-blue">● Validado por Finanzas</span>', validar: '<span class="pill-amber">● Comprobante por validar</span>', pendiente: '<span class="pill-gray">● Esperando transferencia</span>', rechazado: '<span class="pill-red">● Rechazado</span>', saldo: '<span class="pill-gray">● Saldo por cobrar</span>' };
+      const dis = EO.can('conciliar') ? '' : 'disabled title="Requiere permiso de conciliación"';
+      const pctAuto = Math.round(rec.filter(r => r.estado === 'auto').length / Math.max(1, rec.length) * 100);
+      main.innerHTML = `
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Recaudado (octubre)</p><p class="font-display text-3xl font-extrabold mt-2">${EO.clp(sum(rec))}</p><p class="text-[11px] text-eo-muted">${rec.length} transacciones</p></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Confirmados al instante</p><p class="font-display text-3xl font-extrabold mt-2 text-eo-green">${pctAuto}%</p>
+            <div class="h-1.5 rounded-full bg-eo-mint mt-2 overflow-hidden"><div class="h-full bg-eo-green" style="width:${pctAuto}%"></div></div></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Comprobantes por validar</p><p class="font-display text-3xl font-extrabold mt-2 text-eo-amber">${all.filter(r => r.estado === 'validar').length}</p><p class="text-[11px] text-eo-muted">${EO.clp(sum(all.filter(r => r.estado === 'validar')))} · ${all.filter(r => r.estado === 'pendiente').length} esperando transferencia</p></div>
+          <div class="card p-5"><p class="text-xs font-semibold text-eo-muted">Saldos por cobrar</p><p class="font-display text-3xl font-extrabold mt-2">${EO.clp(sum(all.filter(r => r.estado === 'saldo')))}</p><p class="text-[11px] text-eo-muted">Esquema 50% / 50%</p></div>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-5">${[['todos', 'Todos'], ['validar', 'Por validar'], ['pendiente', 'Esperando transferencia'], ['saldo', 'Saldos pendientes'], ['ok', 'Confirmados']].map(([k, n]) => `<button data-f="${k}" class="rounded-full px-4 py-2 text-sm font-semibold border ${filtro === k ? 'bg-eo-ink text-white border-eo-ink' : 'bg-white border-eo-line text-slate-600'}">${n}</button>`).join('')}</div>
+        <div class="card overflow-x-auto"><table class="table-eo min-w-[1180px]"><thead><tr><th>Fecha</th><th>Folio</th><th>Cliente</th><th>Concepto</th><th>Método</th><th>Referencia</th><th class="text-right">Monto</th><th>Estado</th><th></th></tr></thead><tbody>
+          ${L.map((r, i) => `<tr><td class="text-eo-muted whitespace-nowrap">${r.fecha}</td><td><a href="ticket.html?folio=${r.s.folio}" class="font-semibold hover:text-eo-green whitespace-nowrap">${r.s.folio}</a></td><td class="max-w-[200px] truncate">${EO.esc(r.s.cliente)}</td>
+            <td>${r.concepto}</td><td>${r.metodo}</td><td class="font-mono text-[11px] text-eo-muted max-w-[180px] truncate" title="${EO.esc(r.ref)}">${EO.esc(r.ref)}</td><td class="text-right font-semibold whitespace-nowrap">${EO.clp(r.monto)}${r.desc ? `<span class="block text-[10px] font-normal text-eo-green">+ ${EO.clp(r.desc)} desc. 2%</span>` : ''}</td><td>${pill[r.estado]}</td>
+            <td class="text-right whitespace-nowrap">${r.estado === 'validar' ? `<button data-ok="${r.s.folio}" data-i="${r.i}" class="btn-primary btn-sm" ${dis}>Validar</button> <button data-no="${r.s.folio}" data-i="${r.i}" class="btn-ghost btn-sm text-eo-red" ${dis}>Rechazar</button>`
+              : r.estado === 'pendiente' || r.estado === 'rechazado' ? `<button data-conc="${r.s.folio}" data-m="${r.monto}" data-i="${r.i ?? ''}" class="btn-outline btn-sm" ${dis} title="Úsalo si la transferencia aparece en la cartola sin comprobante">Conciliar con cartola</button>` : r.estado === 'saldo' ? `<button data-rem="${r.s.folio}" class="btn-ghost btn-sm">Recordar</button>` : ''}</td></tr>`).join('')}
+        </tbody></table></div>
+        <p class="text-[11px] text-eo-muted mt-3 flex items-center gap-1.5">${EO.icon('info', 'w-3.5 h-3.5')} Los pagos con tarjeta (Webpay) se confirman automáticamente. Las transferencias tienen 2% de descuento y se validan comparando el comprobante con la cartola del banco (RF-04.3).</p>`;
+      main.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { filtro = b.dataset.f; render(); });
+      main.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => {
+        const s = EO.solicitud(b.dataset.ok), p = s.pagos[+b.dataset.i];
+        confirmar(s, +b.dataset.i, p.monto);
+        EO.audit('Transferencia validada', s.folio, `${p.comprobante} · ${EO.clp(p.monto)}`);
+        EO.toast(`Pago de ${s.folio} validado. Se avisó al cliente.`); render();
+      });
+      main.querySelectorAll('[data-no]').forEach(b => b.onclick = () => {
+        const s = EO.solicitud(b.dataset.no), i = +b.dataset.i;
+        const motivo = prompt('Motivo del rechazo (lo verá el cliente):', 'El monto o la cuenta de destino no coinciden con el comprobante.');
+        if (motivo === null) return;
+        const pagos = s.pagos.slice(); pagos[i] = Object.assign({}, pagos[i], { estado: 'rechazado', motivo });
+        EO.updateSolicitud(s.folio, { pagos, pagoEstado: 'rechazado', pagoNota: motivo });
+        EO.audit('Transferencia rechazada', s.folio, motivo);
+        EO.toast('Comprobante rechazado. El cliente puede volver a subirlo.', 'info'); render();
+      });
+      main.querySelectorAll('[data-conc]').forEach(b => b.onclick = () => {
+        const s = EO.solicitud(b.dataset.conc), monto = +b.dataset.m;
+        confirmar(s, b.dataset.i === '' ? null : +b.dataset.i, monto, 'Cartola ' + EO_DATA.banco.banco);
+        EO.audit('Conciliación manual', s.folio, `Transferencia vista en cartola ${EO_DATA.banco.banco} · ${EO.clp(b.dataset.i === '' ? monto - EO.descTransf(monto) : monto)} (con 2% de descuento)`);
+        EO.toast(`Pago de ${s.folio} conciliado. Cliente y ejecutivo notificados.`); render();
+      });
+      main.querySelectorAll('[data-rem]').forEach(b => b.onclick = () => { EO.audit('Recordatorio de pago', b.dataset.rem, 'Correo + WhatsApp'); EO.toast('Recordatorio de saldo enviado.', 'bell'); });
+      EO.refreshIcons();
+    }
+    render();
+  </script>
+</body>
+</html>
