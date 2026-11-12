@@ -12,10 +12,6 @@ Presentación final del Proyecto APT ante la comisión (20 minutos con preguntas
 | :--- | :--- |
 | `Presentacion_Final_EasyOffice.pptx` / `.pdf` | Presentación de 17 diapositivas. Problema, solución, caso de uso y arquitectura van en inglés. |
 | `Informe_Pruebas_EasyOffice.docx` | Plan e informe de pruebas: 19 casos, resultados de dos ejecuciones, defectos encontrados y mejoras aplicadas. |
-| `3.1_APT122_DiarioReflexionFase3.docx` | Pauta oficial del diario de reflexión. |
-| `3.2_APT122_AutoevaluacionFase3.docx` | Pauta oficial de autoevaluación. |
-| `3.3_Estudiante_Fase3_Presentacion_Proyecto_APT.docx` | Orientaciones oficiales de la presentación. |
-| `3.4_APT122_Sumativa_Fase3.pdf` | Rúbrica sumativa de la fase. |
 
 ### Entregables individuales
 
