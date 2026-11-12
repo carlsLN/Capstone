@@ -21,9 +21,9 @@ Presentación final del Proyecto APT ante la comisión (20 minutos con preguntas
 
 | Integrante | Diario de reflexión 3.1 | Autoevaluación 3.2 |
 | :--- | :--- | :--- |
-| Juan Castillo | `Castillo_Juan_3.1_APT122_DiarioReflexionFase3.docx` | Pendiente (tras el ensayo grabado) |
-| Carlos Lienan | Pendiente: `Lienan_Carlos_3.1_APT122_DiarioReflexionFase3.docx` | Pendiente |
-| Nicolás Barraza | Pendiente: `Barraza_Nicolas_3.1_APT122_DiarioReflexionFase3.docx` | Pendiente |
+| Juan Castillo | `Castillo_Juan_3.1_APT122_DiarioReflexionFase3.docx` | `Castillo_Juan_3.2_APT122_AutoevaluacionFase3.docx` |
+| Carlos Lienan | `Lienan_Carlos_3.1_APT122_DiarioReflexionFase3.docx` | `Lienan_Carlos_3.2_APT122_AutoevaluacionFase3.docx` |
+| Nicolás Barraza | `Barraza_Nicolas_3.1_APT122_DiarioReflexionFase3.docx` | `Barraza_Nicolas_3.2_APT122_AutoevaluacionFase3.docx` |
 
 ## Evidencias
 
