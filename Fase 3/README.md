@@ -1,6 +1,6 @@
 # Entregas Fase 3 — Capstone Easy Office (Equipo 11)
 
-Presentación final del Proyecto APT ante la comisión (20 minutos con preguntas), con su documentación, las evidencias de pruebas y el código del MVP.
+Presentación final del Proyecto APT ante la comisión (10 minutos, en español), con su documentación, las evidencias de pruebas y el código del MVP.
 
 - **Sitio publicado:** https://easy-office-97ace.web.app
 - **Integrantes:** Carlos Lienan (Scrum Master, CRM y reuniones con el cliente) · Juan Castillo (GitHub, base de datos y web) · Nicolás Barraza (web y base de datos)
@@ -10,7 +10,7 @@ Presentación final del Proyecto APT ante la comisión (20 minutos con preguntas
 
 | Archivo | Contenido |
 | :--- | :--- |
-| `Presentacion_Final_EasyOffice.pptx` / `.pdf` | Presentación de 17 diapositivas. Problema, solución, caso de uso y arquitectura van en inglés. |
+| `Presentacion_Final_EasyOffice.pptx` / `.pdf` | Presentación final de 11 diapositivas (10 minutos): problema, objetivos, metodología, solución, arquitectura, modelo de datos, caso de uso, pruebas y conclusiones. |
 | `Informe_Pruebas_EasyOffice.docx` | Plan e informe de pruebas: 19 casos, resultados de dos ejecuciones, defectos encontrados y mejoras aplicadas. |
 
 ### Entregables individuales
